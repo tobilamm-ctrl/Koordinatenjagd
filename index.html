@@ -1,0 +1,2602 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f5c63">
+<meta name="description" content="KoordinatenJagd – ein Lernspiel zur Orientierung im Koordinatensystem (Klasse 5–7). Läuft vollständig offline.">
+<title>KoordinatenJagd</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f5c63'/%3E%3Cpath d='M14 50V12M14 50h38' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M34 22l10 10M44 22L34 32' stroke='%23e8a33d' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f4efe6; --bg2:#ebe3d4; --ink:#1b2a38; --ink2:#465668; --muted:#76838f;
+  --card:#ffffff; --line:#e4ddd0; --line2:#d3cab9;
+  --primary:#0f5c63; --primary-2:#13757e; --primary-soft:#e2eff0;
+  --accent:#e8a33d; --accent-d:#b9741a; --accent-soft:#fcefd8;
+  --ok:#1f8a50; --ok-soft:#e1f4e8; --bad:#cf3f3f; --bad-soft:#fde7e5;
+  --violet:#6a52c9; --violet-soft:#ece8fb;
+  --radius:18px;
+  --shadow:0 6px 22px rgba(27,42,56,.09), 0 1px 3px rgba(27,42,56,.08);
+  --shadow-lg:0 18px 50px rgba(27,42,56,.22);
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+html{font-size:clamp(15px, 0.55vw + 10px, 22px);-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{font-family:var(--font);color:var(--ink);background:var(--bg);line-height:1.4;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;position:fixed;inset:0}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.55;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420'%3E%3Cg fill='none' stroke='%23ddd2bf' stroke-width='1.2'%3E%3Cpath d='M60 210c0-70 60-120 140-120s150 40 150 110-70 130-150 130S60 280 60 210z'/%3E%3Cpath d='M100 210c0-48 44-84 102-84s108 30 108 78-50 92-108 92-102-38-102-86z'/%3E%3Cpath d='M140 210c0-26 28-46 62-46s66 18 66 44-30 52-66 52-62-24-62-50z'/%3E%3Cpath d='M-40 40c60-30 120 10 170-20s90-60 140-30M290 420c20-50 80-60 130-40M0 380c40-20 70 10 110-10'/%3E%3C/g%3E%3C/svg%3E");}
+input,textarea{-webkit-user-select:text;user-select:text;font:inherit}
+button{font:inherit;color:inherit;touch-action:manipulation;cursor:pointer}
+button:disabled{cursor:default}
+.i{width:1.35em;height:1.35em;fill:none;stroke:currentColor;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;flex:none;display:block}
+[hidden]{display:none!important}
+
+/* ---------- Screens ---------- */
+.screen{position:fixed;inset:0;display:none;flex-direction:column;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.screen.active{display:flex}
+.scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
+.page{max-width:1080px;margin:0 auto;padding:.4rem 1.2rem 3rem}
+.pagebar{display:flex;align-items:center;gap:.8rem;padding:.8rem 1.2rem;max-width:1080px;width:100%;margin:0 auto}
+.pagebar h2{font-size:1.45rem;flex:1;letter-spacing:-.01em}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.55rem;min-height:3.2rem;padding:0 1.2rem;border:none;border-radius:14px;
+  background:var(--card);color:var(--ink);font-weight:700;font-size:1rem;box-shadow:var(--shadow);transition:transform .08s,background .15s,box-shadow .15s}
+.btn:active:not(:disabled){transform:scale(.97)}
+.btn:disabled{opacity:.45;box-shadow:none}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover:not(:disabled){background:var(--primary-2)}
+.btn-accent{background:var(--accent);color:#2a1a05}
+.btn-ghost{background:transparent;box-shadow:inset 0 0 0 2px var(--line2)}
+.btn-xl{min-height:4rem;font-size:1.25rem;padding:0 2rem;border-radius:18px}
+.btn-icon{width:3rem;height:3rem;min-height:3rem;padding:0;border-radius:14px;flex:none}
+.btn-icon .i{width:1.45rem;height:1.45rem}
+
+/* ---------- Menu ---------- */
+.menu-wrap{display:flex;align-items:center;justify-content:center;padding:1.5rem 1.2rem 2rem}
+.menu-inner{width:min(560px,100%);display:flex;flex-direction:column;gap:.9rem;margin:auto}
+.topright{position:absolute;top:calc(env(safe-area-inset-top) + .8rem);right:calc(env(safe-area-inset-right) + .8rem);display:flex;gap:.5rem;z-index:5}
+.logo{display:flex;align-items:center;gap:.9rem;justify-content:center}
+.logo svg{width:4.4rem;height:4.4rem;flex:none;filter:drop-shadow(0 6px 14px rgba(15,92,99,.25))}
+.logo h1{font-size:clamp(2.1rem,6vw,3.3rem);letter-spacing:-.025em;font-weight:850;line-height:1}
+.logo h1 span{color:var(--accent-d)}
+.tagline{text-align:center;color:var(--ink2);font-size:1.05rem;margin:.1rem 0 .7rem}
+.menu-btn{display:flex;align-items:center;gap:1rem;width:100%;min-height:4.5rem;padding:.7rem 1.1rem;border:none;border-radius:20px;
+  background:var(--card);box-shadow:var(--shadow);font-size:1.25rem;font-weight:750;text-align:left;transition:transform .08s}
+.menu-btn:active{transform:scale(.98)}
+.menu-btn .ico{width:3.1rem;height:3.1rem;border-radius:14px;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary);flex:none}
+.menu-btn .ico .i{width:1.6rem;height:1.6rem}
+.menu-btn small{display:block;font-size:.85rem;font-weight:500;color:var(--muted);margin-top:.1rem}
+.menu-btn.primary{background:linear-gradient(135deg,#0f5c63,#16808a);color:#fff}
+.menu-btn.primary .ico{background:rgba(255,255,255,.16);color:#fff}
+.menu-btn.primary small{color:rgba(255,255,255,.8)}
+.menu-btn .go{margin-left:auto;opacity:.5}
+.menu-row{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+.menu-row .menu-btn{min-height:4rem;font-size:1.1rem}
+.privacy{text-align:center;color:var(--muted);font-size:.85rem;margin-top:.4rem;display:flex;gap:.4rem;justify-content:center;align-items:center;flex-wrap:wrap}
+
+/* ---------- Generic UI ---------- */
+.sec-title{font-size:1.1rem;margin:1.4rem 0 .6rem;display:flex;align-items:center;gap:.5rem}
+.sec-title .num{display:inline-grid;place-items:center;width:1.7rem;height:1.7rem;border-radius:50%;background:var(--primary);color:#fff;font-size:.9rem}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.1rem 1.2rem}
+.hint{color:var(--muted);font-size:.9rem;margin-top:.45rem}
+.seg{display:flex;flex-wrap:wrap;gap:.45rem}
+.seg button{min-height:2.9rem;padding:0 1rem;border-radius:12px;border:2px solid var(--line);background:var(--card);font-weight:650;font-size:.95rem;transition:all .12s}
+.seg button.on{border-color:var(--primary);background:var(--primary-soft);color:var(--primary)}
+.seg .custom-in{display:inline-flex;align-items:center;gap:.4rem;font-weight:600;color:var(--ink2)}
+.num-in{width:4.6rem;min-height:2.9rem;border-radius:12px;border:2px solid var(--line);padding:0 .6rem;font-size:1rem;font-weight:700;text-align:center;background:#fff;color:var(--ink)}
+.num-in:focus{outline:none;border-color:var(--primary)}
+.chips{display:flex;flex-wrap:wrap;gap:.45rem}
+.chip{display:inline-flex;align-items:center;gap:.4rem;padding:.4rem .75rem;border-radius:999px;background:var(--primary-soft);color:var(--primary);font-weight:650;font-size:.9rem}
+.chip.off{background:#eee9df;color:#9a9286;text-decoration:line-through}
+.chip .i{width:1.1em;height:1.1em}
+.link-btn{background:none;border:none;color:var(--primary);font-weight:700;text-decoration:underline;padding:.5rem 0;font-size:.95rem}
+
+/* Setup */
+.sys-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.sys-card{display:flex;align-items:center;gap:1rem;text-align:left;border:3px solid transparent;border-radius:20px;background:var(--card);box-shadow:var(--shadow);padding:1rem;transition:all .15s;min-height:8rem}
+.sys-card.on{border-color:var(--primary);background:#f6fbfb}
+.sys-card .prev{width:9.5rem;height:9.5rem;flex:none;background:#fff;border-radius:12px;border:1px solid var(--line)}
+.sys-card .prev svg{width:100%;height:100%;display:block}
+.sys-card b{display:block;font-size:1.15rem;line-height:1.2}
+.sys-card span{display:block;color:var(--ink2);margin-top:.25rem}
+.sys-card em{display:inline-block;margin-top:.5rem;font-style:normal;font-size:.8rem;font-weight:700;padding:.2rem .55rem;border-radius:999px;background:var(--accent-soft);color:var(--accent-d)}
+.sys-card .tick{margin-left:auto;align-self:flex-start;width:1.8rem;height:1.8rem;border-radius:50%;border:2px solid var(--line2);display:grid;place-items:center;flex:none;color:#fff}
+.sys-card.on .tick{background:var(--primary);border-color:var(--primary)}
+.sys-card .tick span{color:transparent;margin:0}
+.sys-card.on .tick span{color:#fff}
+.sys-card .tick .i{width:1.1rem;height:1.1rem;stroke-width:3}
+.start-row{display:flex;justify-content:center;margin-top:2rem}
+
+/* Settings */
+.set-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.set-sec{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem 1.2rem 1.2rem}
+.set-sec.wide{grid-column:1/-1}
+.set-sec h3{font-size:1.1rem;margin-bottom:.2rem}
+.set-sec .desc{color:var(--muted);font-size:.88rem;margin-bottom:.4rem}
+.set-row{padding:.65rem 0;border-top:1px solid #f0ebe2}
+.set-row:first-of-type{border-top:none}
+.set-row > label.lbl{display:block;font-weight:650;margin-bottom:.45rem;color:var(--ink2);font-size:.95rem}
+.tog{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-height:2.9rem;cursor:pointer}
+.tog .t-l{font-weight:650;color:var(--ink2)}
+.tog .t-l small{display:block;font-weight:500;color:var(--muted);font-size:.82rem}
+.switch{position:relative;width:3.4rem;height:2rem;flex:none}
+.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:2}
+.switch span{position:absolute;inset:0;border-radius:999px;background:#d7d0c3;transition:background .15s}
+.switch span::after{content:"";position:absolute;top:.2rem;left:.2rem;width:1.6rem;height:1.6rem;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+.switch input:checked + span{background:var(--primary)}
+.switch input:checked + span::after{transform:translateX(1.4rem)}
+.type-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(13rem,1fr));gap:.6rem}
+.type-tog{display:flex;align-items:center;gap:.7rem;padding:.7rem .8rem;border-radius:14px;border:2px solid var(--line);background:#fff;cursor:pointer;min-height:3.6rem}
+.type-tog.on{border-color:var(--primary);background:var(--primary-soft)}
+.type-tog .box{width:1.6rem;height:1.6rem;border-radius:7px;border:2px solid var(--line2);display:grid;place-items:center;flex:none;color:#fff;background:#fff}
+.type-tog.on .box{background:var(--primary);border-color:var(--primary)}
+.type-tog .box .i{width:1rem;height:1rem;stroke-width:3}
+.type-tog b{font-weight:700;font-size:.95rem;display:block}
+.type-tog small{color:var(--muted);font-size:.78rem;display:block}
+.preset-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem}
+.preset{border:2px solid var(--line);border-radius:16px;background:#fff;padding:.8rem;text-align:left;min-height:5rem}
+.preset b{display:block;font-size:1.1rem}
+.preset small{display:block;color:var(--muted);font-size:.8rem;margin-top:.2rem;line-height:1.3}
+.preset.on{border-color:var(--primary);background:var(--primary-soft)}
+.preview-box{height:16rem;background:#fff;border:1px solid var(--line);border-radius:14px;position:relative;margin:.4rem 0 .6rem}
+.preview-box svg{position:absolute;inset:0;width:100%;height:100%}
+.diff-badge{display:inline-block;margin-left:.5rem;font-size:.8rem;font-weight:700;padding:.15rem .55rem;border-radius:999px;background:var(--accent-soft);color:var(--accent-d);vertical-align:middle}
+
+/* Guide */
+.guide h3{font-size:1.15rem;margin:1.2rem 0 .4rem;color:var(--primary)}
+.guide p,.guide li{color:var(--ink2);margin-bottom:.35rem}
+.guide ul{padding-left:1.2rem}
+.guide .coord{font-weight:700;color:var(--ink)}
+.guide-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.mode-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.6rem;margin-top:.4rem}
+.mode-item{display:flex;gap:.6rem;align-items:flex-start;padding:.7rem;border-radius:14px;background:#faf7f1;border:1px solid var(--line)}
+.mode-item .ico{width:2.3rem;height:2.3rem;border-radius:10px;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;flex:none}
+.mode-item b{display:block}
+.mode-item span{font-size:.88rem;color:var(--muted)}
+.merksatz{background:var(--accent-soft);border-left:5px solid var(--accent);padding:.8rem 1rem;border-radius:12px;font-weight:650;color:#5a3b0b;margin:.6rem 0}
+
+/* ---------- Game ---------- */
+.topbar{display:flex;align-items:center;gap:.6rem;padding:.6rem .8rem;min-height:4rem}
+.hud-progress{display:flex;flex-direction:column;gap:.25rem;min-width:8.5rem}
+.hud-progress span{font-weight:750;font-size:1rem;white-space:nowrap}
+.pbar,.tbar{height:.45rem;border-radius:999px;background:#e3dbcc;overflow:hidden;width:100%}
+.pbar i,.tbar i{display:block;height:100%;width:0;background:var(--primary);border-radius:inherit;transition:width .3s}
+.tbar i{background:var(--accent);transition:width .1s linear}
+.tbar.low i{background:var(--bad)}
+.hud-timer{display:flex;align-items:center;gap:.4rem;min-width:7rem;font-weight:750}
+.hud-timer .tbar{width:4.5rem}
+.spacer{flex:1}
+.pill{display:inline-flex;align-items:center;gap:.4rem;padding:0 .9rem;height:2.8rem;border-radius:999px;background:var(--card);box-shadow:var(--shadow);font-weight:750;white-space:nowrap}
+.pill.score{background:var(--ink);color:#fff;font-size:1.1rem;min-width:6.5rem;justify-content:center}
+.pill.score b{font-variant-numeric:tabular-nums}
+.pill.mode{background:var(--accent-soft);color:var(--accent-d)}
+.game-main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,24rem);gap:.8rem;padding:0 .8rem .8rem}
+.board-wrap{position:relative;background:#fff;border-radius:20px;box-shadow:var(--shadow);min-height:0;min-width:0;overflow:hidden}
+.board-wrap svg{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.fx{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.panel{display:flex;flex-direction:column;gap:.7rem;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;padding-bottom:.2rem}
+.task-card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:1rem 1.1rem}
+.task-cat{display:inline-flex;align-items:center;gap:.4rem;font-size:.82rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--primary);background:var(--primary-soft);padding:.3rem .65rem;border-radius:999px}
+.task-cat .i{width:1.1rem;height:1.1rem}
+.task-text{font-size:1.3rem;font-weight:700;line-height:1.35;margin-top:.6rem}
+.task-text .coord,.task-step .coord{white-space:nowrap;font-weight:800;color:var(--primary)}
+.task-text .em{font-size:1.5rem;vertical-align:-.1em}
+.task-step{margin-top:.5rem;font-size:1.1rem;font-weight:650;color:var(--ink2)}
+.task-step:empty{display:none}
+.task-list{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.6rem}
+.task-list:empty{display:none}
+.task-list .pt{padding:.3rem .6rem;border-radius:10px;background:#f3efe7;font-weight:750;font-variant-numeric:tabular-nums;border:2px solid transparent;white-space:nowrap}
+.task-list .pt.cur{border-color:var(--primary);background:var(--primary-soft);color:var(--primary)}
+.task-list .pt.ok{background:var(--ok-soft);color:var(--ok)}
+.task-list .pt.bad{background:var(--bad-soft);color:var(--bad)}
+.vec{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;padding:0 .35rem;margin:0 .15rem;line-height:1.1;position:relative;font-weight:800;color:var(--primary)}
+.vec::before,.vec::after{content:"";position:absolute;top:0;bottom:0;width:.3rem;border:2px solid currentColor}
+.vec::before{left:0;border-right:none;border-radius:6px 0 0 6px}
+.vec::after{right:0;border-left:none;border-radius:0 6px 6px 0}
+.area{background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:.9rem 1rem}
+.area-tap{display:flex;align-items:center;gap:.7rem;color:var(--ink2);font-weight:600}
+.area-tap .i{width:1.8rem;height:1.8rem;color:var(--accent-d)}
+.coord-entry{display:flex;align-items:center;justify-content:center;gap:.25rem;font-size:2rem;font-weight:800;margin-bottom:.8rem}
+.coord-entry .lab{color:var(--primary);margin-right:.1rem}
+.ce-field{position:relative;min-width:4.6rem;height:3.6rem;border-radius:14px;border:3px solid var(--line);background:#fbfaf7;font-size:1.8rem;font-weight:800;font-variant-numeric:tabular-nums;display:flex;align-items:center;justify-content:center;padding:0 .4rem}
+.ce-field small{position:absolute;bottom:-1.25rem;left:0;right:0;font-size:.75rem;color:var(--muted);font-weight:700}
+.ce-field.active{border-color:var(--primary);background:#fff;box-shadow:0 0 0 4px rgba(15,92,99,.12)}
+.ce-field.active .v::after{content:"";display:inline-block;width:2px;height:1.5rem;background:var(--primary);margin-left:2px;vertical-align:-.15rem;animation:blink 1s steps(1) infinite}
+.ce-field.err{border-color:var(--bad);background:var(--bad-soft)}
+.ce-field.okk{border-color:var(--ok);background:var(--ok-soft)}
+@keyframes blink{50%{opacity:0}}
+.keypad{display:grid;grid-template-columns:repeat(4,1fr);gap:.45rem;margin-top:1.3rem}
+.keypad button{min-height:3.3rem;border-radius:12px;border:none;background:#f1ece2;font-size:1.35rem;font-weight:750;display:flex;align-items:center;justify-content:center;transition:transform .06s,background .1s}
+.keypad button:active:not(:disabled){transform:scale(.94);background:#e5ddcd}
+.keypad button:disabled{opacity:.35}
+.keypad .k-ok{background:var(--primary);color:#fff;grid-column:span 2;font-size:1.1rem}
+.keypad .k-zero{grid-column:span 2}
+.keypad .k-fn{background:#e6eef0;color:var(--primary);font-size:1.05rem}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:.55rem}
+.choices button{min-height:3.6rem;border-radius:14px;border:2px solid var(--line);background:#fff;font-weight:750;font-size:1.05rem;padding:.3rem .6rem}
+.choices button.ok{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.choices button.bad{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.feedback{border-radius:20px;padding:.9rem 1rem;box-shadow:var(--shadow);background:var(--card);border-left:6px solid var(--primary);animation:slideIn .25s ease-out}
+.feedback.ok{background:var(--ok-soft);border-color:var(--ok)}
+.feedback.bad{background:var(--bad-soft);border-color:var(--bad)}
+.feedback.info{background:var(--accent-soft);border-color:var(--accent)}
+.fb-head{display:flex;align-items:center;gap:.5rem;font-size:1.15rem}
+.fb-head .fb-ico{width:2rem;height:2rem;border-radius:50%;display:grid;place-items:center;color:#fff;background:var(--primary);flex:none}
+.feedback.ok .fb-ico{background:var(--ok)}
+.feedback.bad .fb-ico{background:var(--bad)}
+.feedback.info .fb-ico{background:var(--accent)}
+.fb-ico .i{width:1.2rem;height:1.2rem;stroke-width:3}
+.fb-pts{margin-left:auto;font-weight:850;color:var(--ok);font-variant-numeric:tabular-nums}
+.fb-msg{margin-top:.45rem;color:var(--ink2);font-size:.98rem}
+.fb-msg p{margin-top:.35rem}
+.fb-msg .coord{font-weight:800;white-space:nowrap;color:var(--ink)}
+.fb-msg .tip{display:block;margin-top:.45rem;padding:.5rem .7rem;border-radius:10px;background:rgba(255,255,255,.7);font-weight:650;color:var(--ink)}
+.fb-next{margin-top:.7rem;width:100%}
+@keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.panel-actions{display:flex;gap:.5rem;margin-top:auto}
+.panel-actions .btn{flex:1}
+.cost{font-size:.8rem;font-weight:800;padding:.1rem .45rem;border-radius:999px;background:var(--bad-soft);color:var(--bad)}
+
+@media (max-aspect-ratio: 1/1){
+  .game-main{grid-template-columns:1fr;grid-template-rows:minmax(14rem,1fr) auto}
+  .panel{max-height:50vh}
+  .panel-actions{margin-top:0}
+}
+@media (max-width:700px){
+  html{font-size:14px}
+  .topbar{gap:.4rem;padding:.5rem}
+  .hud-progress{min-width:6rem}
+  .pill{padding:0 .6rem;height:2.5rem}
+  .pill.score{min-width:4.5rem}
+  .btn-icon{width:2.6rem;height:2.6rem;min-height:2.6rem}
+  .sys-grid,.set-grid,.guide-grid{grid-template-columns:1fr}
+  .sys-card .prev{width:7rem;height:7rem}
+  .preset-row{grid-template-columns:1fr}
+  .menu-row{grid-template-columns:1fr}
+  .hide-sm{display:none!important}
+  .keypad button{min-height:2.8rem}
+  .ce-field{height:3rem;min-width:4rem;font-size:1.5rem}
+  .coord-entry{font-size:1.6rem;margin-bottom:.6rem}
+}
+@media (max-height:520px) and (min-aspect-ratio: 1/1){
+  .topbar{min-height:3rem;padding:.3rem .6rem}
+  .keypad{margin-top:1.1rem;gap:.3rem}
+  .keypad button{min-height:2.4rem;font-size:1.1rem}
+  .task-text{font-size:1.1rem}
+  .ce-field{height:2.8rem}
+  .coord-entry{font-size:1.5rem;margin-bottom:.4rem}
+}
+
+/* ---------- Results ---------- */
+.res-head{text-align:center;padding:1rem 0 .4rem}
+.res-head .trophy{width:5rem;height:5rem;margin:0 auto .6rem;border-radius:24px;background:linear-gradient(135deg,var(--accent),#f1c56f);display:grid;place-items:center;color:#4a2e05;box-shadow:0 10px 30px rgba(232,163,61,.4)}
+.res-head .trophy .i{width:2.8rem;height:2.8rem}
+.res-head h2{font-size:clamp(1.7rem,4vw,2.4rem);letter-spacing:-.02em}
+.res-head p{font-size:1.25rem;color:var(--ink2);margin-top:.2rem}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(10rem,1fr));gap:.7rem;margin-top:1rem}
+.tile{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:.9rem 1rem}
+.tile b{display:block;font-size:1.8rem;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.tile span{color:var(--muted);font-weight:650;font-size:.88rem}
+.tile.hl{background:var(--ink);color:#fff}
+.tile.hl span{color:rgba(255,255,255,.7)}
+.res-cols{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem}
+.bar-row{display:grid;grid-template-columns:9.5rem 1fr 3.5rem;gap:.6rem;align-items:center;padding:.35rem 0;font-size:.95rem}
+.bar-row .bt{height:.8rem;border-radius:999px;background:#eee8dc;overflow:hidden}
+.bar-row .bt i{display:block;height:100%;border-radius:inherit;background:var(--primary)}
+.bar-row .bv{text-align:right;font-weight:750;font-variant-numeric:tabular-nums}
+.kv{display:flex;justify-content:space-between;gap:1rem;padding:.45rem 0;border-top:1px solid #f0ebe2}
+.kv:first-of-type{border-top:none}
+.kv b{text-align:right}
+.res-actions{display:flex;flex-wrap:wrap;gap:.7rem;justify-content:center;margin-top:1.5rem}
+.task-log{display:flex;flex-wrap:wrap;gap:.35rem}
+.task-log span{display:inline-flex;align-items:center;gap:.25rem;padding:.25rem .55rem;border-radius:10px;font-size:.85rem;font-weight:700}
+.task-log .y{background:var(--ok-soft);color:var(--ok)}
+.task-log .n{background:var(--bad-soft);color:var(--bad)}
+
+/* ---------- Modal / Toast ---------- */
+.modal{position:fixed;inset:0;background:rgba(18,28,38,.55);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:50;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+.modal-card{background:var(--card);border-radius:24px;box-shadow:var(--shadow-lg);padding:1.4rem;width:min(520px,100%);max-height:100%;overflow:auto}
+.modal-card h3{font-size:1.35rem;margin-bottom:.5rem}
+.modal-card p{color:var(--ink2)}
+.modal-actions{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.2rem;justify-content:flex-end}
+.modal-actions .btn{flex:1 1 auto}
+.tut{width:min(860px,100%);display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:1.2rem;align-items:center}
+.tut-board{position:relative;aspect-ratio:1/1;background:#fff;border:1px solid var(--line);border-radius:16px;max-height:70vh}
+.tut-board svg{position:absolute;inset:0;width:100%;height:100%}
+.tut-count{font-size:.85rem;font-weight:800;color:var(--accent-d);text-transform:uppercase;letter-spacing:.06em}
+.tut h3{font-size:1.5rem;margin:.3rem 0 .5rem}
+.tut p{font-size:1.1rem;color:var(--ink2)}
+.tut-dots{display:flex;gap:.35rem;margin-top:1rem}
+.tut-dots i{width:.55rem;height:.55rem;border-radius:50%;background:var(--line2)}
+.tut-dots i.on{background:var(--primary);width:1.4rem;border-radius:999px}
+.tut-nav{display:flex;gap:.5rem;margin-top:1.2rem;flex-wrap:wrap}
+.tut-nav .btn{flex:1}
+@media (max-width:700px), (max-aspect-ratio: 1/1){
+  .tut{grid-template-columns:1fr}
+  .tut-board{max-height:45vh;width:100%;max-width:45vh;margin:0 auto}
+}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 1.2rem);transform:translate(-50%,calc(100% + 3rem));opacity:0;background:var(--ink);color:#fff;padding:.75rem 1.2rem;border-radius:14px;font-weight:650;box-shadow:var(--shadow-lg);z-index:60;transition:transform .25s,opacity .25s;max-width:min(92vw,560px);text-align:center;pointer-events:none}
+.toast.show{transform:translate(-50%,0);opacity:1}
+
+/* ---------- SVG coordinate system ---------- */
+.g-grid line{stroke:#e1e6ec;stroke-width:1}
+.g-grid line.major{stroke:#c3ccd6;stroke-width:1.2}
+.g-axis{stroke:#1b2a38;stroke-width:2.2;stroke-linecap:round}
+.g-arrow{fill:#1b2a38}
+.g-tick{stroke:#1b2a38;stroke-width:1.6}
+.g-label{fill:#2f3d4b;font-weight:650;font-variant-numeric:tabular-nums;font-family:var(--font)}
+.halo{paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
+.g-axisname{fill:#1b2a38;font-style:italic;font-weight:700;font-family:Georgia,"Times New Roman",serif}
+.g-origin{fill:#1b2a38}
+.it-point .pt{fill:var(--primary);stroke:#fff;stroke-width:2}
+.it-point.ok .pt{fill:var(--ok)}
+.it-point.bad .pt{fill:var(--bad)}
+.it-point.orig .pt{fill:var(--violet)}
+.it-point.walker .pt{fill:var(--accent);stroke:#fff}
+.it-point .cross{stroke:#fff;stroke-width:2.2;stroke-linecap:round}
+.it-point .pt-label{font-weight:800;fill:#1b2a38;font-family:var(--font)}
+.it-point.ok .pt-label{fill:#146c3c}
+.it-point.bad .pt-label{fill:#a52b2b}
+.it-point.orig .pt-label{fill:#4e3aa3}
+.sol-ring{fill:none;stroke:var(--ok);stroke-width:3;stroke-dasharray:5 4}
+.ring-pulse{fill:none;stroke:var(--accent);stroke-width:3;transform-box:fill-box;transform-origin:center;animation:ringPulse 1.4s ease-out infinite}
+@keyframes ringPulse{0%{transform:scale(.5);opacity:1}100%{transform:scale(1.6);opacity:0}}
+.anim-pop{transform-box:fill-box;transform-origin:center;animation:pop .35s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
+.anim-shake{animation:shake .4s}
+@keyframes shake{20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+.helper{stroke:var(--accent);stroke-width:2.6;stroke-dasharray:7 5;fill:none;stroke-linecap:round}
+.helper-badge rect{fill:var(--accent)}
+.helper-badge text{fill:#2a1a05;font-weight:800;font-family:var(--font)}
+.helper-dot{fill:var(--accent)}
+.mirror-band{stroke:#d24c8f;stroke-opacity:.35;stroke-width:9;stroke-linecap:round}
+.mirror-line{stroke:#c0397c;stroke-width:3;stroke-dasharray:10 6}
+.mirror-ring{fill:rgba(210,76,143,.15);stroke:#c0397c;stroke-width:3}
+.mirror-text{fill:#a72b69;font-weight:800;font-family:var(--font)}
+.poly{fill:rgba(15,92,99,.08);stroke:var(--primary);stroke-width:3;stroke-linejoin:round}
+.poly.open{fill:none;stroke-dasharray:2 0}
+.poly.orig{fill:rgba(106,82,201,.12);stroke:var(--violet)}
+.poly.done{fill:rgba(232,163,61,.28);stroke:var(--accent-d)}
+.poly.draw{stroke-dasharray:1;stroke-dashoffset:1;animation:drawLine .9s ease forwards}
+@keyframes drawLine{to{stroke-dashoffset:0}}
+.seg-line{stroke:var(--accent);stroke-width:4;stroke-linecap:round}
+.seg-line.trail{stroke:var(--accent);stroke-width:5;stroke-opacity:.85}
+.seg-line.hl{stroke:var(--primary);stroke-width:10;stroke-opacity:.18}
+.seg-line.vec{stroke:var(--violet);stroke-width:3;stroke-dasharray:7 5}
+.arrowhead{fill:var(--violet)}
+.region{stroke:none}
+.region.pos{fill:rgba(31,138,80,.10)}
+.region.neg{fill:rgba(207,63,63,.10)}
+.region.q1{fill:rgba(15,92,99,.10)}.region.q2{fill:rgba(232,163,61,.14)}.region.q3{fill:rgba(106,82,201,.11)}.region.q4{fill:rgba(207,63,63,.09)}
+.it-text{font-weight:800;font-family:var(--font);fill:#1b2a38}
+.it-text.big{font-size:1.4em}
+.it-text.soft{fill:#465668;font-weight:700}
+.it-icon .bg{fill:#fff;stroke:#c8d0d9;stroke-width:1.5}
+.it-icon text,.it-spot text{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+.it-spot .bg{fill:#f7e8c9;stroke:#c3934a;stroke-width:2;stroke-dasharray:4 3}
+.it-spot .q{fill:#9b6c25;font-weight:900;font-family:var(--font)}
+.it-spot.empty .bg{fill:#eef0f2;stroke:#b9c1ca;stroke-dasharray:none}
+.it-spot.empty .q{fill:#9aa4ae}
+.it-spot.found .bg{fill:#fff3d6;stroke:var(--accent);stroke-width:3;stroke-dasharray:none}
+.burst line{stroke:var(--accent);stroke-width:3;stroke-linecap:round}
+.burst{transform-box:fill-box;transform-origin:center;animation:burst .8s ease-out forwards}
+@keyframes burst{0%{transform:scale(.3);opacity:1}100%{transform:scale(1.5);opacity:0}}
+.ghost{fill:rgba(15,92,99,.18);stroke:var(--primary);stroke-width:2;pointer-events:none}
+.miss{fill:none;stroke:var(--muted);stroke-width:2;transform-box:fill-box;transform-origin:center;animation:missA .5s ease-out forwards}
+@keyframes missA{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.4);opacity:0}}
+.float-pts{position:absolute;font-weight:900;font-size:1.6rem;color:var(--ok);text-shadow:0 2px 0 #fff,0 0 8px #fff;animation:floatUp 1.2s ease-out forwards;transform:translate(-50%,-50%);white-space:nowrap}
+.float-pts.neg{color:var(--bad)}
+@keyframes floatUp{0%{opacity:0;transform:translate(-50%,-30%) scale(.7)}15%{opacity:1;transform:translate(-50%,-60%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-180%) scale(1)}}
+.confetti{position:absolute;width:10px;height:14px;border-radius:2px;top:-20px;animation:fall linear forwards}
+@keyframes fall{to{transform:translate(var(--dx),110vh) rotate(var(--rot));}}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+</head>
+<body>
+<!-- ============ HAUPTMENÜ ============ -->
+<section class="screen active" id="screen-menu">
+  <div class="topright">
+    <button class="btn btn-icon" data-action="sound" aria-label="Sound an/aus"><span data-icon="sound"></span></button>
+    <button class="btn btn-icon" data-action="fullscreen" aria-label="Vollbild"><span data-icon="expand"></span></button>
+  </div>
+  <div class="scroll menu-wrap">
+    <div class="menu-inner">
+      <div class="logo">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <rect width="64" height="64" rx="16" fill="#0f5c63"/>
+          <g stroke="#ffffff" stroke-opacity=".18" stroke-width="1.2">
+            <path d="M22 10v42M30 10v42M38 10v42M46 10v42M14 18h42M14 26h42M14 34h42"/>
+          </g>
+          <path d="M14 52V10M14 52h42" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>
+          <path d="M10.5 14L14 9l3.5 5M52 48.5l5 3.5-5 3.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M14 52 Q 24 46 30 38 T 42 26" fill="none" stroke="#e8a33d" stroke-width="2.4" stroke-dasharray="3 3"/>
+          <path d="M38 22l8 8M46 22l-8 8" stroke="#e8a33d" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <h1>Koordinaten<span>Jagd</span></h1>
+      </div>
+      <p class="tagline">Die Expedition durchs Koordinatensystem</p>
+      <button class="menu-btn primary" data-action="start-game"><span class="ico"><span data-icon="play"></span></span><span>Spiel starten<small>Punkte sammeln auf deiner Expedition</small></span><span class="go" data-icon="arrowR"></span></button>
+      <button class="menu-btn" data-action="start-training"><span class="ico"><span data-icon="target"></span></span><span>Training<small>Ohne Zeitdruck – mit Erklärungen</small></span><span class="go" data-icon="arrowR"></span></button>
+      <div class="menu-row">
+        <button class="menu-btn" data-action="settings"><span class="ico"><span data-icon="sliders"></span></span><span>Einstellungen<small>Lehrer-Bereich</small></span></button>
+        <button class="menu-btn" data-action="guide"><span class="ico"><span data-icon="book"></span></span><span>Anleitung<small>So geht's</small></span></button>
+      </div>
+      <button class="menu-btn" data-action="fullscreen" style="min-height:3.6rem;font-size:1.05rem"><span class="ico" style="width:2.6rem;height:2.6rem"><span data-icon="expand"></span></span><span class="fs-label">Vollbild</span></button>
+      <p class="privacy"><span data-icon="lock"></span> Offline · Keine Anmeldung · Keine Datenübertragung · Kein Tracking</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SPIEL-VORBEREITUNG ============ -->
+<section class="screen" id="screen-setup">
+  <div class="pagebar">
+    <button class="btn btn-icon" data-action="menu" aria-label="Zurück"><span data-icon="arrowL"></span></button>
+    <h2 id="setup-title">Neue Expedition</h2>
+  </div>
+  <div class="scroll"><div class="page">
+    <h3 class="sec-title" style="margin-top:.4rem"><span class="num">1</span> Welches Koordinatensystem?</h3>
+    <div class="sys-grid">
+      <button class="sys-card" data-sys="normal">
+        <div class="prev"><svg id="prev-normal"></svg></div>
+        <div><b>Normales Koordinatensystem</b><span>Nur positive Koordinaten</span><em>Einsteiger · 1. Quadrant</em></div>
+        <span class="tick"><span data-icon="check"></span></span>
+      </button>
+      <button class="sys-card" data-sys="extended">
+        <div class="prev"><svg id="prev-extended"></svg></div>
+        <div><b>Erweitertes Koordinatensystem</b><span>Positive und negative Koordinaten</span><em>Alle vier Quadranten</em></div>
+        <span class="tick"><span data-icon="check"></span></span>
+      </button>
+    </div>
+    <h3 class="sec-title"><span class="num">2</span> Zahlenbereich</h3>
+    <div class="seg" id="setup-range"></div>
+    <h3 class="sec-title"><span class="num">3</span> Schwierigkeit</h3>
+    <div class="preset-row" id="setup-diff"></div>
+    <p class="hint" id="setup-diff-note"></p>
+    <div id="setup-count-wrap">
+      <h3 class="sec-title"><span class="num">4</span> Anzahl Aufgaben</h3>
+      <div class="seg" id="setup-count"></div>
+    </div>
+    <h3 class="sec-title">Aktive Aufgabentypen</h3>
+    <div class="chips" id="setup-types"></div>
+    <button class="link-btn" data-action="settings-from-setup">Aufgabentypen und Darstellung in den Lehrer-Einstellungen ändern</button>
+    <div class="start-row"><button class="btn btn-primary btn-xl" id="btn-go"><span data-icon="play"></span><span id="btn-go-label">Los geht's!</span></button></div>
+  </div></div>
+</section>
+
+<!-- ============ SPIEL ============ -->
+<section class="screen" id="screen-game">
+  <header class="topbar">
+    <button class="btn btn-icon" data-action="quit" aria-label="Beenden"><span data-icon="home"></span></button>
+    <div class="hud-progress"><span id="hud-progress">Aufgabe 1 / 10</span><div class="pbar"><i id="hud-pbar"></i></div></div>
+    <div class="hud-timer" id="hud-timer" hidden><span data-icon="clock"></span><span id="hud-time">30</span><div class="tbar" id="hud-tbar-wrap"><i id="hud-tbar"></i></div></div>
+    <div class="spacer"></div>
+    <span class="pill mode hide-sm" id="hud-mode">Training</span>
+    <span class="pill" id="hud-treasure" title="Gefundene Schätze">🎒 <b id="hud-treasure-n">0</b></span>
+    <span class="pill score" id="hud-score-wrap" title="Punkte"><span data-icon="star"></span><b id="hud-score">0</b></span>
+    <button class="btn btn-icon hide-sm" data-action="sound" aria-label="Sound"><span data-icon="sound"></span></button>
+    <button class="btn btn-icon" data-action="fullscreen" aria-label="Vollbild"><span data-icon="expand"></span></button>
+  </header>
+  <main class="game-main">
+    <div class="board-wrap" id="board-wrap"><svg id="board" role="img" aria-label="Koordinatensystem"></svg><div class="fx" id="fx"></div></div>
+    <aside class="panel" id="panel">
+      <div class="task-card">
+        <div class="task-cat"><span id="task-cat-ico"></span><span id="task-cat">Punkt setzen</span></div>
+        <div class="task-text" id="task-text"></div>
+        <div class="task-list" id="task-list"></div>
+        <div class="task-step" id="task-step"></div>
+      </div>
+      <div class="area area-tap" id="area-tap"><span data-icon="hand"></span><span>Tippe auf den passenden Gitterpunkt im Koordinatensystem.</span></div>
+      <div class="area" id="area-input" hidden>
+        <div class="coord-entry"><span class="lab" id="ce-label">A</span><span>(</span><button class="ce-field" id="ce-x" data-field="x"><span class="v"></span><small>x</small></button><span>|</span><button class="ce-field" id="ce-y" data-field="y"><span class="v"></span><small>y</small></button><span>)</span></div>
+        <div class="keypad" id="keypad">
+          <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button data-k="back" class="k-fn" aria-label="Löschen"><span data-icon="backspace"></span></button>
+          <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button data-k="sign" class="k-fn" id="k-sign" aria-label="Vorzeichen">+/−</button>
+          <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button data-k="switch" class="k-fn" aria-label="Feld wechseln">x⇄y</button>
+          <button data-k="0" class="k-zero">0</button><button data-k="ok" class="k-ok">Prüfen <span data-icon="check"></span></button>
+        </div>
+      </div>
+      <div class="area" id="area-choice" hidden><div class="choices" id="choices"></div></div>
+      <div class="feedback" id="feedback" hidden>
+        <div class="fb-head"><span class="fb-ico" id="fb-ico"></span><b id="fb-title"></b><span class="fb-pts" id="fb-pts"></span></div>
+        <div class="fb-msg" id="fb-msg"></div>
+        <button class="btn btn-primary fb-next" id="fb-next">Weiter <span data-icon="arrowR"></span></button>
+      </div>
+      <div class="panel-actions">
+        <button class="btn" id="btn-help"><span data-icon="bulb"></span>Hilfe <span class="cost" id="help-cost">−20</span></button>
+        <button class="btn btn-ghost" id="btn-end-training">Training beenden</button>
+      </div>
+    </aside>
+  </main>
+</section>
+
+<!-- ============ ERGEBNIS ============ -->
+<section class="screen" id="screen-results">
+  <div class="scroll"><div class="page" id="results-page"></div></div>
+</section>
+
+<!-- ============ LEHRER-EINSTELLUNGEN ============ -->
+<section class="screen" id="screen-settings">
+  <div class="pagebar">
+    <button class="btn btn-icon" data-action="settings-back" aria-label="Zurück"><span data-icon="arrowL"></span></button>
+    <h2>Lehrer-Einstellungen</h2>
+    <button class="btn btn-primary" data-action="settings-back"><span data-icon="check"></span>Fertig</button>
+  </div>
+  <div class="scroll"><div class="page" id="settings-page"></div></div>
+</section>
+
+<!-- ============ ANLEITUNG ============ -->
+<section class="screen" id="screen-guide">
+  <div class="pagebar">
+    <button class="btn btn-icon" data-action="menu" aria-label="Zurück"><span data-icon="arrowL"></span></button>
+    <h2>Anleitung</h2>
+  </div>
+  <div class="scroll"><div class="page guide">
+    <div class="card">
+      <h3 style="margin-top:0">Worum geht es?</h3>
+      <p>Bei der KoordinatenJagd bist du auf Expedition im Koordinatensystem: Du setzt Punkte, liest Koordinaten ab, spürst Schätze auf, entdeckst Figuren und spiegelst oder verschiebst Punkte. Für richtige Lösungen bekommst du Punkte.</p>
+      <div class="merksatz">Merksatz: Zuerst gehst du auf der x-Achse nach rechts oder links. Danach auf der y-Achse nach oben oder unten.</div>
+      <p>Koordinaten schreibt man so: <span class="coord">A(3|5)</span> – zuerst der x-Wert, dann der y-Wert, getrennt durch einen senkrechten Strich. Negative Werte: <span class="coord">B(−3|5)</span>, <span class="coord">C(4|−2)</span>. Der Ursprung ist <span class="coord">O(0|0)</span>.</p>
+      <div class="tut-nav" style="max-width:640px">
+        <button class="btn btn-primary" data-action="tutorial-normal"><span data-icon="play"></span>Einführung: normales System</button>
+        <button class="btn btn-accent" data-action="tutorial-extended"><span data-icon="play"></span>Einführung: erweitertes System</button>
+      </div>
+    </div>
+    <div class="guide-grid" style="margin-top:1rem">
+      <div class="card">
+        <h3 style="margin-top:0">Normales Koordinatensystem</h3>
+        <ul>
+          <li>Nur der 1. Quadrant: alle Koordinaten sind positiv oder 0.</li>
+          <li>Der Ursprung O(0|0) liegt unten links.</li>
+          <li>x-Achse nach rechts, y-Achse nach oben.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">Erweitertes Koordinatensystem</h3>
+        <ul>
+          <li>Der Ursprung liegt in der Mitte.</li>
+          <li>Negative x-Werte liegen <b>links</b>, positive <b>rechts</b> vom Ursprung.</li>
+          <li>Positive y-Werte liegen <b>oben</b>, negative <b>unten</b>.</li>
+          <li>Quadranten: I (+|+) rechts oben, II (−|+) links oben, III (−|−) links unten, IV (+|−) rechts unten.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <h3 style="margin-top:0">Spielmodi</h3>
+      <div class="mode-list" id="guide-modes"></div>
+    </div>
+    <div class="guide-grid" style="margin-top:1rem">
+      <div class="card">
+        <h3 style="margin-top:0">Punkte</h3>
+        <ul>
+          <li>Richtig beim ersten Versuch: <b>100 Punkte</b></li>
+          <li>Zeitbonus (falls aktiv): sehr schnell +50, schnell +30, normal +10</li>
+          <li>Richtig im 2. Versuch: 50 Punkte, im 3. Versuch: 25 Punkte</li>
+          <li>Hilfe kostet Punkte (einstellbar, Standard −20)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">Bedienung &amp; Datenschutz</h3>
+        <ul>
+          <li>Tippe auf einen Kreuzungspunkt des Rasters. Ein Tipp in der Nähe wird automatisch dem nächsten Gitterpunkt zugeordnet.</li>
+          <li>Eingaben über die Zahlentastatur oder die Tastatur (Ziffern, Minus, Enter, Tab).</li>
+          <li>Kein Konto, keine Anmeldung, keine Internetverbindung, kein Tracking. Gespeichert werden nur Einstellungen im Browser.</li>
+        </ul>
+      </div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ============ MODAL / TUTORIAL / TOAST ============ -->
+<div class="modal" id="modal" hidden><div class="modal-card" id="modal-card"></div></div>
+<div class="modal" id="tutorial" hidden>
+  <div class="modal-card tut">
+    <div class="tut-board"><svg id="tut-svg"></svg></div>
+    <div>
+      <div class="tut-count" id="tut-count"></div>
+      <h3 id="tut-title"></h3>
+      <p id="tut-msg"></p>
+      <div class="tut-dots" id="tut-dots"></div>
+      <div class="tut-nav">
+        <button class="btn btn-ghost" id="tut-prev"><span data-icon="arrowL"></span>Zurück</button>
+        <button class="btn btn-primary" id="tut-next">Weiter <span data-icon="arrowR"></span></button>
+      </div>
+      <div class="tut-nav" style="margin-top:.5rem"><button class="btn btn-ghost" id="tut-close" style="min-height:2.6rem">Einführung schließen</button></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(function(){
+'use strict';
+
+/* =====================================================================
+   1. HILFSFUNKTIONEN
+   ===================================================================== */
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const SVGNS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(SVGNS, tag);
+  if (attrs) for (const k in attrs) { if (attrs[k] !== undefined && attrs[k] !== null && attrs[k] !== false) e.setAttribute(k, attrs[k]); }
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const nz = v => (v === 0 ? 0 : v);              // -0 → 0
+const now = () => performance.now();
+const P = (x, y) => ({ x: nz(x), y: nz(y) });
+const eqP = (a, b) => a && b && a.x === b.x && a.y === b.y;
+const MINUS = '−';
+function fmtNum(n) { n = nz(n); return n < 0 ? MINUS + Math.abs(n) : String(n); }
+function fmtSigned(n) { n = nz(n); return n > 0 ? '+' + n : fmtNum(n); }
+function fmtPt(p) { return '(' + fmtNum(p.x) + '|' + fmtNum(p.y) + ')'; }
+function coordHTML(label, p) { return '<span class="coord">' + (label || '') + fmtPt(p) + '</span>'; }
+function vecHTML(v) { return '<span class="vec"><span>' + fmtSigned(v.x) + '</span><span>' + fmtSigned(v.y) + '</span></span>'; }
+function units(n) { n = Math.abs(n); return n === 1 ? '1 Einheit' : n + ' Einheiten'; }
+function fmtDec(n, d) { return n.toFixed(d).replace('.', ','); }
+
+/* ---------- Icons (inline SVG, keine externen Dateien) ---------- */
+const ICONS = {
+  play: '<path d="M7 4.5v15l12-7.5z"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/>',
+  sliders: '<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
+  book: '<path d="M2 4h6a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h7z"/>',
+  expand: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+  shrink: '<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>',
+  sound: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>',
+  mute: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9.5l5 5M22 9.5l-5 5"/>',
+  home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z"/>',
+  arrowR: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  arrowL: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
+  trend: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  backspace: '<path d="M21 5H9l-6 7 6 7h12z"/><path d="M12 9l6 6M18 9l-6 6"/>',
+  pin: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  chest: '<path d="M3 10a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v9H3z"/><path d="M3 12h18"/><path d="M10.5 10.5h3v3.5h-3z"/>',
+  objects: '<path d="M4 4h6v6H4z"/><circle cx="17" cy="7" r="3"/><path d="M4 20l3-6 3 6z"/><path d="M14 14h6v6h-6z"/>',
+  shape: '<path d="M5 18L8 6l11 3-3 10z"/><circle cx="5" cy="18" r="1.3"/><circle cx="8" cy="6" r="1.3"/><circle cx="19" cy="9" r="1.3"/><circle cx="16" cy="19" r="1.3"/>',
+  mirror: '<path d="M12 3v18" stroke-dasharray="2.5 2.5"/><path d="M9 7L4 17h5z"/><path d="M15 7l5 10h-5z"/>',
+  move: '<rect x="3" y="13" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1" stroke-dasharray="2.5 2"/><path d="M9 13l5-4M10.5 9H14v3.5"/>',
+  trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/>',
+  star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+  lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  hand: '<path d="M9 11V5a1.5 1.5 0 0 1 3 0v5M12 10V4a1.5 1.5 0 0 1 3 0v6M15 10V6a1.5 1.5 0 0 1 3 0v7a7 7 0 0 1-7 7h-.5a6 6 0 0 1-4.6-2.2L3.5 14.6a1.6 1.6 0 0 1 2.4-2.1L9 15V11"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/>'
+};
+function icon(name, cls) { return '<svg class="i ' + (cls || '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[name] || '') + '</svg>'; }
+function hydrateIcons(root) { $$('[data-icon]', root).forEach(s => { s.innerHTML = icon(s.dataset.icon); }); }
+
+/* =====================================================================
+   2. EINSTELLUNGEN (localStorage – keine personenbezogenen Daten)
+   ===================================================================== */
+const STORAGE_KEY = 'koordinatenjagd.settings.v1';
+const TYPE_KEYS = ['place', 'read', 'treasure', 'objects', 'figure', 'mirror', 'move'];
+const TYPE_INFO = {
+  place:   { name: 'Punkt setzen',        icon: 'pin',     desc: 'Eine Koordinate ist gegeben – tippe die richtige Stelle an.' },
+  read:    { name: 'Koordinaten ablesen', icon: 'eye',     desc: 'Ein Punkt ist eingezeichnet – gib x und y ein.' },
+  treasure:{ name: 'Schatzsuche',         icon: 'chest',   desc: 'Finde unter mehreren Grabstellen den Schatz.' },
+  objects: { name: 'Objekte bestimmen',   icon: 'objects', desc: 'Welche Koordinaten hat der Schlüssel, der Stern …?' },
+  figure:  { name: 'Figurenjagd',         icon: 'shape',   desc: 'Punkte setzen, verbinden und die Figur erkennen.' },
+  mirror:  { name: 'Spiegeljagd',         icon: 'mirror',  desc: 'Punkte und Figuren an Achsen oder am Ursprung spiegeln.' },
+  move:    { name: 'Verschieben',         icon: 'move',    desc: 'Punkte und Figuren verschieben – auch per Vektor.' }
+};
+const DEFAULTS = {
+  difficulty: 'easy',
+  system: 'normal',
+  rangeNormalSel: '10', rangeNormalCustom: 12,
+  rangeExtSel: '10', rangeExtCustom: 8,
+  types: { place: true, read: true, treasure: false, objects: false, figure: false, mirror: false, move: false },
+  gridMode: 'full', ticks: true, labels: 'all', axisLabels: true,
+  helpAllowed: true, helpCost: 20,
+  taskCountSel: '10', taskCountCustom: 12,
+  timeLimit: 0, timeBonus: true, attempts: 2,
+  showPoints: true, showSolution: true, moveVector: true,
+  sound: true, tutorialOffered: false
+};
+const PRESETS = {
+  easy: {
+    label: 'Leicht', desc: 'Normales System · 0 bis 10 · volles Raster · alle Zahlen · Punkt setzen & ablesen',
+    values: { system: 'normal', rangeNormalSel: '10', gridMode: 'full', ticks: true, labels: 'all', axisLabels: true,
+      types: { place: true, read: true, treasure: false, objects: false, figure: false, mirror: false, move: false } }
+  },
+  medium: {
+    label: 'Mittel', desc: 'Normal 0 bis 20 oder erweitert −10 bis +10 · weniger Zahlen · Schatzsuche & Figuren',
+    values: { rangeNormalSel: '20', rangeExtSel: '10', gridMode: 'full', ticks: true, labels: 'every2', axisLabels: true,
+      types: { place: true, read: true, treasure: true, objects: true, figure: true, mirror: false, move: false } }
+  },
+  hard: {
+    label: 'Schwer', desc: 'Erweitertes System · negative Koordinaten · teilweise ausgeblendete Zahlen · Spiegeln, Verschieben, Figuren',
+    values: { system: 'extended', rangeExtSel: '10', gridMode: 'full', ticks: true, labels: 'selected', axisLabels: true,
+      types: { place: true, read: true, treasure: true, objects: true, figure: true, mirror: true, move: true } }
+  }
+};
+let settings = null;
+
+function loadSettings() {
+  let s = {};
+  try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) s = JSON.parse(raw) || {}; } catch (e) { s = {}; }
+  settings = Object.assign({}, DEFAULTS, s);
+  settings.types = Object.assign({}, DEFAULTS.types, (s && typeof s.types === 'object') ? s.types : {});
+  validateSettings();
+  return settings;
+}
+function validateSettings() {
+  const S = settings;
+  if (!['normal', 'extended'].includes(S.system)) S.system = 'normal';
+  if (!['5', '10', '20', 'custom'].includes(String(S.rangeNormalSel))) S.rangeNormalSel = '10';
+  if (!['5', '10', '20', 'custom'].includes(String(S.rangeExtSel))) S.rangeExtSel = '10';
+  S.rangeNormalSel = String(S.rangeNormalSel); S.rangeExtSel = String(S.rangeExtSel);
+  S.rangeNormalCustom = clamp(parseInt(S.rangeNormalCustom, 10) || 12, 3, 30);
+  S.rangeExtCustom = clamp(parseInt(S.rangeExtCustom, 10) || 8, 3, 25);
+  if (!['full', 'ticks', 'none'].includes(S.gridMode)) S.gridMode = 'full';
+  if (!['all', 'every2', 'selected', 'none'].includes(S.labels)) S.labels = 'all';
+  if (!['5', '10', '15', '20', 'custom'].includes(String(S.taskCountSel))) S.taskCountSel = '10';
+  S.taskCountSel = String(S.taskCountSel);
+  S.taskCountCustom = clamp(parseInt(S.taskCountCustom, 10) || 12, 1, 100);
+  S.timeLimit = [0, 15, 30, 60].includes(Number(S.timeLimit)) ? Number(S.timeLimit) : 0;
+  S.attempts = clamp(parseInt(S.attempts, 10) || 2, 1, 3);
+  S.helpCost = [0, 10, 20, 30].includes(Number(S.helpCost)) ? Number(S.helpCost) : 20;
+  if (!['easy', 'medium', 'hard', 'custom'].includes(S.difficulty)) S.difficulty = 'custom';
+  ['ticks', 'axisLabels', 'helpAllowed', 'timeBonus', 'showPoints', 'showSolution', 'moveVector', 'sound', 'tutorialOffered']
+    .forEach(k => { S[k] = !!S[k]; });
+  TYPE_KEYS.forEach(k => { S.types[k] = !!S.types[k]; });
+}
+function saveSettings() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch (e) { /* z. B. privater Modus – App läuft trotzdem */ }
+}
+function applyPreset(name) {
+  const p = PRESETS[name]; if (!p) return;
+  const v = JSON.parse(JSON.stringify(p.values));
+  Object.assign(settings, v);
+  settings.types = v.types;
+  settings.difficulty = name;
+  saveSettings();
+}
+function getRange(sys) {
+  sys = sys || settings.system;
+  const sel = sys === 'normal' ? settings.rangeNormalSel : settings.rangeExtSel;
+  if (sel === 'custom') return sys === 'normal' ? settings.rangeNormalCustom : settings.rangeExtCustom;
+  return Number(sel);
+}
+function getBounds(sys) {
+  sys = sys || settings.system;
+  const R = getRange(sys);
+  return sys === 'normal' ? { xmin: 0, xmax: R, ymin: 0, ymax: R } : { xmin: -R, xmax: R, ymin: -R, ymax: R };
+}
+function getTaskCount() { return settings.taskCountSel === 'custom' ? settings.taskCountCustom : Number(settings.taskCountSel); }
+function enabledTypes() { const t = TYPE_KEYS.filter(k => settings.types[k]); return t.length ? t : ['place']; }
+
+/* =====================================================================
+   3. MATHEMATIK (rein, testbar)
+   ===================================================================== */
+const KJMath = {
+  /* axis: {type:'x'} | {type:'y'} | {type:'o'} | {type:'vx', c} (senkrechte Gerade x=c) | {type:'hy', c} (waagerechte Gerade y=c) */
+  mirror(p, axis) {
+    switch (axis.type) {
+      case 'x':  return P(p.x, -p.y);
+      case 'y':  return P(-p.x, p.y);
+      case 'o':  return P(-p.x, -p.y);
+      case 'vx': return P(2 * axis.c - p.x, p.y);
+      case 'hy': return P(p.x, 2 * axis.c - p.y);
+    }
+    return P(p.x, p.y);
+  },
+  move(p, v) { return P(p.x + v.x, p.y + v.y); },
+  quadrant(p) {
+    if (p.x === 0 || p.y === 0) return 0;
+    if (p.x > 0 && p.y > 0) return 1;
+    if (p.x < 0 && p.y > 0) return 2;
+    if (p.x < 0 && p.y < 0) return 3;
+    return 4;
+  },
+  inBounds(p, b) { return p.x >= b.xmin && p.x <= b.xmax && p.y >= b.ymin && p.y <= b.ymax; },
+  area2(a, b, c) { return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x); }
+};
+const QNAME = { 1: 'I. Quadranten', 2: 'II. Quadranten', 3: 'III. Quadranten', 4: 'IV. Quadranten' };
+const QDESC = { 1: 'x positiv, y positiv (rechts oben)', 2: 'x negativ, y positiv (links oben)', 3: 'x negativ, y negativ (links unten)', 4: 'x positiv, y negativ (rechts unten)' };
+const AXIS_TEXT = { x: 'an der x-Achse', y: 'an der y-Achse', o: 'am Ursprung O(0|0)' };
+function axisText(a) {
+  if (a.type === 'vx') return 'an der senkrechten Spiegelachse x = ' + fmtNum(a.c);
+  if (a.type === 'hy') return 'an der waagerechten Spiegelachse y = ' + fmtNum(a.c);
+  return AXIS_TEXT[a.type];
+}
+function walkText(p) {
+  const xs = p.x > 0 ? '<b>' + p.x + ' nach rechts</b>' : p.x < 0 ? '<b>' + (-p.x) + ' nach links</b>' : '<b>nicht nach rechts oder links</b> (x = 0)';
+  const ys = p.y > 0 ? '<b>' + p.y + ' nach oben</b>' : p.y < 0 ? '<b>' + (-p.y) + ' nach unten</b>' : '<b>nicht nach oben oder unten</b> (y = 0)';
+  return 'Vom Ursprung aus: zuerst ' + xs + ', dann ' + ys + '.';
+}
+function explainPoint(label, p) {
+  return (label ? 'Der Punkt ' + label + ' liegt' : 'Der Punkt liegt') + ' bei <b>x = ' + fmtNum(p.x) + '</b> und <b>y = ' + fmtNum(p.y) + '</b>. ' + walkText(p);
+}
+
+/* ---------- Fehleranalyse ---------- */
+const ERR_LABELS = {
+  swap: 'x und y vertauscht', signx: 'Vorzeichenfehler bei x', signy: 'Vorzeichenfehler bei y', signxy: 'Beide Vorzeichen falsch',
+  quadrant: 'Falscher Quadrant', mirroraxis: 'Falsche Spiegelachse', mirrorpartial: 'Spiegelung unvollständig',
+  movedir: 'Verschiebungsrichtung verwechselt', moveswap: 'Verschiebung x/y vertauscht', movepartial: 'Nur in eine Richtung verschoben',
+  orig: 'Ausgangspunkt statt Bildpunkt', near: 'Knapp daneben (1 Kästchen)', onecoord: 'Eine Koordinate falsch',
+  figure: 'Figur falsch benannt', other: 'Sonstige Fehler', timeout: 'Zeit abgelaufen'
+};
+function analyzeAnswer(g, t, ctx) {
+  ctx = ctx || {};
+  if (eqP(g, t)) return null;
+  const o = ctx.orig;
+  if (o && eqP(g, o)) return { type: 'orig', msg: 'Du hast den Ausgangspunkt gewählt. Der gesuchte Bildpunkt liegt an einer anderen Stelle.' };
+  if (ctx.axis && o) {
+    const at = ctx.axis.type;
+    if (at === 'x' || at === 'y' || at === 'o') {
+      for (const k of ['x', 'y', 'o']) {
+        if (k === at) continue;
+        if (eqP(g, KJMath.mirror(o, { type: k }))) return { type: 'mirroraxis', msg: 'Das wäre die Spiegelung ' + AXIS_TEXT[k] + '. Gefragt ist die Spiegelung ' + AXIS_TEXT[at] + '.' };
+      }
+    } else if (at === 'vx' && g.y === o.y && g.x === ctx.axis.c) {
+      return { type: 'mirrorpartial', msg: 'Du bist nur bis zur Spiegelachse gegangen. Gehe auf der anderen Seite noch einmal genauso weit.' };
+    } else if (at === 'hy' && g.x === o.x && g.y === ctx.axis.c) {
+      return { type: 'mirrorpartial', msg: 'Du bist nur bis zur Spiegelachse gegangen. Gehe auf der anderen Seite noch einmal genauso weit.' };
+    }
+  }
+  if (ctx.move && o) {
+    const v = ctx.move;
+    const cands = [
+      [P(o.x - v.x, o.y + v.y), 'movedir', v.x > 0 ? 'Achte auf die Richtung: „nach rechts“ heißt, der x-Wert wird größer.' : 'Achte auf die Richtung: „nach links“ heißt, der x-Wert wird kleiner.'],
+      [P(o.x + v.x, o.y - v.y), 'movedir', v.y > 0 ? 'Achte auf die Richtung: „nach oben“ heißt, der y-Wert wird größer.' : 'Achte auf die Richtung: „nach unten“ heißt, der y-Wert wird kleiner.'],
+      [P(o.x - v.x, o.y - v.y), 'movedir', 'Du hast genau in die entgegengesetzte Richtung verschoben.'],
+      [P(o.x + v.y, o.y + v.x), 'moveswap', 'Du hast die Verschiebung in x- und y-Richtung vertauscht. Die erste (obere) Zahl gehört zu x, die zweite zu y.'],
+      [P(o.x + v.x, o.y), 'movepartial', 'Du hast nur in x-Richtung verschoben – die Verschiebung in y-Richtung fehlt noch.'],
+      [P(o.x, o.y + v.y), 'movepartial', 'Du hast nur in y-Richtung verschoben – die Verschiebung in x-Richtung fehlt noch.']
+    ];
+    for (const [p, type, msg] of cands) if (eqP(g, p) && !eqP(p, t) && !eqP(p, o)) return { type, msg };
+  }
+  if (g.x === t.y && g.y === t.x) return { type: 'swap', msg: 'Du hast wahrscheinlich x- und y-Koordinate vertauscht. Die erste Zahl ist x (rechts/links), die zweite ist y (oben/unten).' };
+  if (g.x === -t.x && g.y === t.y) return { type: 'signx', msg: 'Achte auf das ' + (t.x < 0 ? 'Minuszeichen' : 'Vorzeichen') + ' bei der x-Koordinate. ' + (t.x < 0 ? 'Negative x-Werte liegen links vom Ursprung.' : 'Positive x-Werte liegen rechts vom Ursprung.') };
+  if (g.y === -t.y && g.x === t.x) return { type: 'signy', msg: 'Achte auf das ' + (t.y < 0 ? 'Minuszeichen' : 'Vorzeichen') + ' bei der y-Koordinate. ' + (t.y < 0 ? 'Negative y-Werte liegen unterhalb des Ursprungs.' : 'Positive y-Werte liegen oberhalb des Ursprungs.') };
+  if (g.x === -t.x && g.y === -t.y) return { type: 'signxy', msg: 'Beide Vorzeichen stimmen nicht. Achte bei x auf rechts/links und bei y auf oben/unten.' };
+  const qg = KJMath.quadrant(g), qt = KJMath.quadrant(t);
+  if (qg && qt && qg !== qt) return { type: 'quadrant', msg: 'Falscher Quadrant: Der gesuchte Punkt liegt im ' + QNAME[qt] + ' – ' + QDESC[qt] + '.' };
+  const dx = Math.abs(g.x - t.x), dy = Math.abs(g.y - t.y);
+  if (dx <= 1 && dy <= 1) return { type: 'near', msg: 'Knapp daneben! Zähle die Kästchen noch einmal genau – vom Ursprung aus.' };
+  if (g.x === t.x) return { type: 'onecoord', msg: 'Der x-Wert stimmt. Prüfe den y-Wert: gesucht ist y = ' + fmtNum(t.y) + ', du hast y = ' + fmtNum(g.y) + '.' };
+  if (g.y === t.y) return { type: 'onecoord', msg: 'Der y-Wert stimmt. Prüfe den x-Wert: gesucht ist x = ' + fmtNum(t.x) + ', du hast x = ' + fmtNum(g.x) + '.' };
+  return { type: 'other', msg: 'Starte im Ursprung, gehe zuerst auf der x-Achse und dann parallel zur y-Achse.' };
+}
+
+/* =====================================================================
+   4. KOORDINATENSYSTEM (SVG)
+   Mathematische Koordinaten  <->  SVG-Pixel (viewBox = Pixelgröße)
+   px = ox + (x − xmin)·cell        py = oy + (ymax − y)·cell   (y wächst nach oben!)
+   ===================================================================== */
+let csCounter = 0;
+const Z_ORDER = { region: 0, mirror: 1, poly: 2, helpers: 3, segment: 4, icon: 5, spot: 5, solution: 6, point: 7, text: 8 };
+
+class CoordSystem {
+  constructor(svg, opts) {
+    this.svg = svg;
+    this.opts = Object.assign({ interactive: false, size: null, minFont: 11, maxFont: 22, compact: false }, opts || {});
+    this.cfg = { xmin: 0, xmax: 10, ymin: 0, ymax: 10, gridMode: 'full', ticks: true, labels: 'all', axisLabels: true };
+    this.items = [];
+    this.geo = null;
+    this.hoverEnabled = false;
+    this.id = 'cs' + (++csCounter);
+    svg.setAttribute('xmlns', SVGNS);
+    svg.textContent = '';
+    const defs = el('defs', null, svg);
+    const m = el('marker', { id: this.id + '-arrow', viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: 'auto-start-reverse' }, defs);
+    el('path', { d: 'M0,0 L10,5 L0,10 z', class: 'arrowhead' }, m);
+    this.gStatic = el('g', { class: 'g-static' }, svg);
+    this.gItems = el('g', { class: 'g-items' }, svg);
+    this.gGhost = el('g', { class: 'g-ghost' }, svg);
+    if (this.opts.interactive) this.bindEvents();
+    if (!this.opts.size && window.ResizeObserver) {
+      this.ro = new ResizeObserver(() => this.render());
+      this.ro.observe(svg.parentNode || svg);
+    } else if (!this.opts.size) {
+      window.addEventListener('resize', () => this.render());
+    }
+  }
+  setConfig(cfg) { Object.assign(this.cfg, cfg); this.render(); }
+
+  measure() {
+    let W, H;
+    if (this.opts.size) { W = this.opts.size[0]; H = this.opts.size[1]; }
+    else { const r = this.svg.getBoundingClientRect(); W = r.width; H = r.height; }
+    if (!(W > 40 && H > 40)) return null;
+    const c = this.cfg, ext = c.xmin < 0 || c.ymin < 0;
+    const xs = c.xmax - c.xmin, ys = c.ymax - c.ymin;
+    const m = Math.min(W, H);
+    const fs = clamp(Math.round(m / 44), this.opts.minFont, this.opts.maxFont);
+    const arrow = clamp(m * 0.045, 14, 34);
+    let padL, padR, padT, padB;
+    if (ext) { padL = padR = padT = padB = arrow + fs * 0.7; }
+    else { padL = fs * 2.3 + 8; padB = fs * 1.9 + 8; padR = arrow + fs * 0.8; padT = arrow + fs * 0.8; }
+    const cell = Math.min((W - padL - padR) / xs, (H - padT - padB) / ys);
+    const ox = padL + ((W - padL - padR) - cell * xs) / 2;
+    const oy = padT + ((H - padT - padB) - cell * ys) / 2;
+    return { W, H, fs, arrow, cell, ox, oy, ext };
+  }
+  coordinateToPixel(x, y) {
+    const g = this.geo, c = this.cfg;
+    return { x: g.ox + (x - c.xmin) * g.cell, y: g.oy + (c.ymax - y) * g.cell };
+  }
+  pixelToCoordinate(px, py) {
+    const g = this.geo, c = this.cfg;
+    return { x: c.xmin + (px - g.ox) / g.cell, y: c.ymax - (py - g.oy) / g.cell };
+  }
+  /* Nächster Rasterpunkt; ok=false, wenn der Tipp nicht eindeutig einem Gitterpunkt zuzuordnen ist */
+  snapToGrid(px, py) {
+    const raw = this.pixelToCoordinate(px, py), c = this.cfg;
+    const x = nz(clamp(Math.round(raw.x), c.xmin, c.xmax));
+    const y = nz(clamp(Math.round(raw.y), c.ymin, c.ymax));
+    const q = this.coordinateToPixel(x, y);
+    const d = Math.hypot(q.x - px, q.y - py);
+    const cell = this.geo.cell;
+    const thr = cell < 28 ? cell * 0.72 : Math.max(cell * 0.45, 14);
+    return { x, y, dist: d, ok: d <= thr, raw };
+  }
+  clientToSvg(cx, cy) {
+    const ctm = this.svg.getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+    const pt = this.svg.createSVGPoint(); pt.x = cx; pt.y = cy;
+    const r = pt.matrixTransform(ctm.inverse());
+    return { x: r.x, y: r.y };
+  }
+
+  render() {
+    const g = this.measure();
+    if (!g) return;
+    this.geo = g;
+    this.svg.setAttribute('viewBox', '0 0 ' + g.W + ' ' + g.H);
+    this.svg.style.fontSize = g.fs + 'px';
+    this.gStatic.textContent = '';
+    this.drawGrid(this.gStatic);
+    this.drawAxes(this.gStatic);
+    this.drawLabels(this.gStatic);
+    this.renderItems();
+  }
+  drawGrid(G) {
+    const c = this.cfg;
+    if (c.gridMode !== 'full') return;
+    const gg = el('g', { class: 'g-grid' }, G);
+    const span = Math.max(c.xmax - c.xmin, c.ymax - c.ymin);
+    const tl = this.coordinateToPixel(c.xmin, c.ymax), br = this.coordinateToPixel(c.xmax, c.ymin);
+    for (let x = c.xmin; x <= c.xmax; x++) {
+      const px = this.coordinateToPixel(x, 0).x;
+      el('line', { x1: px, y1: tl.y, x2: px, y2: br.y, class: (span > 10 && x % 5 === 0) ? 'major' : null }, gg);
+    }
+    for (let y = c.ymin; y <= c.ymax; y++) {
+      const py = this.coordinateToPixel(0, y).y;
+      el('line', { x1: tl.x, y1: py, x2: br.x, y2: py, class: (span > 10 && y % 5 === 0) ? 'major' : null }, gg);
+    }
+  }
+  drawAxes(G) {
+    const c = this.cfg, g = this.geo;
+    const o = this.coordinateToPixel(0, 0);
+    const left = this.coordinateToPixel(c.xmin, 0).x, right = this.coordinateToPixel(c.xmax, 0).x;
+    const top = this.coordinateToPixel(0, c.ymax).y, bottom = this.coordinateToPixel(0, c.ymin).y;
+    const a = g.arrow, ah = clamp(a * 0.48, 8, 15);
+    const ga = el('g', { class: 'g-axes' }, G);
+    // Teilstriche
+    if (c.gridMode !== 'none' || c.ticks) {
+      const t = clamp(g.cell * 0.18, 3, 7);
+      for (let x = c.xmin; x <= c.xmax; x++) { if (x === 0) continue; const px = this.coordinateToPixel(x, 0).x; el('line', { x1: px, y1: o.y - t, x2: px, y2: o.y + t, class: 'g-tick' }, ga); }
+      for (let y = c.ymin; y <= c.ymax; y++) { if (y === 0) continue; const py = this.coordinateToPixel(0, y).y; el('line', { x1: o.x - t, y1: py, x2: o.x + t, y2: py, class: 'g-tick' }, ga); }
+    }
+    const xStart = g.ext ? left - Math.min(a * 0.35, 10) : o.x;
+    const yStart = g.ext ? bottom + Math.min(a * 0.35, 10) : o.y;
+    const xEnd = right + a, yEnd = top - a;
+    el('line', { x1: xStart, y1: o.y, x2: xEnd - ah * 0.6, y2: o.y, class: 'g-axis' }, ga);
+    el('line', { x1: o.x, y1: yStart, x2: o.x, y2: yEnd + ah * 0.6, class: 'g-axis' }, ga);
+    el('polygon', { points: xEnd + ',' + o.y + ' ' + (xEnd - ah) + ',' + (o.y - ah * 0.55) + ' ' + (xEnd - ah) + ',' + (o.y + ah * 0.55), class: 'g-arrow' }, ga);
+    el('polygon', { points: o.x + ',' + yEnd + ' ' + (o.x - ah * 0.55) + ',' + (yEnd + ah) + ' ' + (o.x + ah * 0.55) + ',' + (yEnd + ah), class: 'g-arrow' }, ga);
+    el('circle', { cx: o.x, cy: o.y, r: clamp(g.cell * 0.07, 2, 3.5), class: 'g-origin' }, ga);
+    if (c.axisLabels) {
+      const fs = g.fs * 1.25;
+      const tx = el('text', { x: xEnd - ah * 0.2, y: o.y - fs * 0.55, 'text-anchor': 'end', class: 'g-axisname halo', 'font-size': fs }, ga); tx.textContent = 'x';
+      const ty = el('text', { x: o.x + fs * 0.5, y: yEnd + fs * 0.45, 'text-anchor': 'start', class: 'g-axisname halo', 'font-size': fs }, ga); ty.textContent = 'y';
+    }
+  }
+  labelStep() {
+    const c = this.cfg, g = this.geo;
+    const chars = Math.max(String(c.xmax).length, String(Math.abs(c.xmin)).length + (c.xmin < 0 ? 1 : 0));
+    const need = g.fs * (0.56 * chars) + 3;
+    return [1, 2, 5, 10, 20].find(s => g.cell * s >= Math.max(need, g.fs * 1.25)) || 20;
+  }
+  shouldLabel(v, step) {
+    const mode = this.cfg.labels, a = Math.abs(v);
+    if (mode === 'none' || v === 0) return false;
+    if (mode === 'all') return a % step === 0;
+    if (mode === 'every2') return a % (step * 2) === 0;
+    if (mode === 'selected') { const s = step >= 5 ? 10 : 5; return v === 1 || a % s === 0; }
+    return false;
+  }
+  drawLabels(G) {
+    const c = this.cfg, g = this.geo;
+    if (c.labels === 'none') return;
+    const gl = el('g', { class: 'g-labels' }, G);
+    const o = this.coordinateToPixel(0, 0), fs = g.fs, step = this.labelStep();
+    const t = clamp(g.cell * 0.18, 3, 7);
+    for (let x = c.xmin; x <= c.xmax; x++) {
+      if (!this.shouldLabel(x, step)) continue;
+      const px = this.coordinateToPixel(x, 0).x;
+      const tx = el('text', { x: px - (x < 0 ? fs * 0.17 : 0), y: o.y + t + fs * 0.95, 'text-anchor': 'middle', class: 'g-label halo', 'font-size': fs }, gl);
+      tx.textContent = fmtNum(x);
+    }
+    for (let y = c.ymin; y <= c.ymax; y++) {
+      if (!this.shouldLabel(y, step)) continue;
+      const py = this.coordinateToPixel(0, y).y;
+      const ty = el('text', { x: o.x - t - fs * 0.3, y: py + fs * 0.35, 'text-anchor': 'end', class: 'g-label halo', 'font-size': fs }, gl);
+      ty.textContent = fmtNum(y);
+    }
+    // Die 0 nur einmal – schräg unterhalb links vom Ursprung
+    const z = el('text', { x: o.x - fs * 0.35, y: o.y + fs * 1.1, 'text-anchor': 'end', class: 'g-label halo', 'font-size': fs }, gl);
+    z.textContent = '0';
+  }
+
+  /* ---------- dynamische Elemente ---------- */
+  add(it) { it.anim = it.anim !== false; this.items.push(it); this.renderItems(); return it; }
+  remove(pred) { this.items = this.items.filter(it => !pred(it)); this.renderItems(); }
+  clear() { this.items = []; this.renderItems(); }
+  renderItems() {
+    if (!this.geo) return;
+    const G = this.gItems; G.textContent = '';
+    const list = this.items.map((it, i) => [it, i]).sort((a, b) => ((Z_ORDER[a[0].kind] || 0) - (Z_ORDER[b[0].kind] || 0)) || (a[1] - b[1]));
+    const pr = clamp(this.geo.cell * 0.2, 5, 11);
+    for (const [it] of list) {
+      const fn = this['draw_' + it.kind];
+      if (fn) fn.call(this, G, it, pr);
+      it.anim = false;
+    }
+  }
+  labelPos(it, p, pr) {
+    const c = this.cfg; let dx = pr + 3, dy = -pr - 3, anchor = 'start';
+    if (it.x >= c.xmax - 0.5) { dx = -pr - 3; anchor = 'end'; }
+    if (it.y >= c.ymax - 0.5 || (it.y < 0 && it.y > c.ymin + 0.5)) dy = pr + this.geo.fs + 2;
+    return { x: p.x + dx, y: p.y + dy, anchor };
+  }
+  draw_point(G, it, pr) {
+    const p = this.coordinateToPixel(it.x, it.y);
+    const g = el('g', { class: 'it-point ' + (it.cls || '') }, G);
+    if (it.ring) el('circle', { cx: p.x, cy: p.y, r: pr * 2.2, class: 'ring-pulse' }, g);
+    const inner = el('g', { class: it.anim ? (it.cls && it.cls.indexOf('bad') >= 0 ? 'anim-pop' : 'anim-pop') : null }, g);
+    const r = it.big ? pr * 1.25 : pr;
+    el('circle', { cx: p.x, cy: p.y, r: r, class: 'pt' }, inner);
+    if (it.cross) { const k = r * 0.45; el('path', { d: 'M' + (p.x - k) + ' ' + (p.y - k) + 'L' + (p.x + k) + ' ' + (p.y + k) + 'M' + (p.x + k) + ' ' + (p.y - k) + 'L' + (p.x - k) + ' ' + (p.y + k), class: 'cross' }, inner); }
+    if (it.label || it.showCoords) {
+      const lp = this.labelPos(it, p, r);
+      const t = el('text', { x: lp.x, y: lp.y, 'text-anchor': lp.anchor, class: 'pt-label halo', 'font-size': this.geo.fs * 1.12 }, g);
+      t.textContent = it.label + (it.showCoords ? fmtPt(it) : '');
+    }
+  }
+  draw_solution(G, it, pr) {
+    const p = this.coordinateToPixel(it.x, it.y);
+    const g = el('g', { class: 'it-point ok' }, G);
+    el('circle', { cx: p.x, cy: p.y, r: pr * 2, class: 'sol-ring' }, g);
+    el('circle', { cx: p.x, cy: p.y, r: pr * 2.1, class: 'ring-pulse', style: 'stroke:var(--ok)' }, g);
+    el('circle', { cx: p.x, cy: p.y, r: pr, class: 'pt' }, g);
+    if (it.label || it.showCoords) {
+      const lp = this.labelPos(it, p, pr * 2);
+      const t = el('text', { x: lp.x, y: lp.y, 'text-anchor': lp.anchor, class: 'pt-label halo', 'font-size': this.geo.fs * 1.12 }, g);
+      t.textContent = it.label + (it.showCoords ? fmtPt(it) : '');
+    }
+  }
+  draw_icon(G, it) {
+    const p = this.coordinateToPixel(it.x, it.y);
+    const r = clamp(this.geo.cell * 0.42, 10, 24);
+    const g = el('g', { class: 'it-icon' + (it.anim ? ' anim-pop' : '') }, G);
+    el('circle', { cx: p.x, cy: p.y, r: r, class: 'bg' }, g);
+    const t = el('text', { x: p.x, y: p.y + r * 0.08, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': r * 1.15 }, g);
+    t.textContent = it.emoji;
+  }
+  draw_spot(G, it) {
+    const p = this.coordinateToPixel(it.x, it.y);
+    const r = clamp(this.geo.cell * 0.38, 9, 22);
+    const g = el('g', { class: 'it-spot ' + (it.state || 'closed') }, G);
+    if (it.state === 'found' && it.anim) {
+      const b = el('g', { class: 'burst' }, g);
+      for (let i = 0; i < 10; i++) { const a = i * Math.PI / 5; el('line', { x1: p.x + Math.cos(a) * r * 1.2, y1: p.y + Math.sin(a) * r * 1.2, x2: p.x + Math.cos(a) * r * 2.1, y2: p.y + Math.sin(a) * r * 2.1 }, b); }
+    }
+    const inner = el('g', { class: it.anim ? 'anim-pop' : null }, g);
+    el('circle', { cx: p.x, cy: p.y, r: it.state === 'found' ? r * 1.15 : r, class: 'bg' }, inner);
+    if (it.state === 'found') {
+      const t = el('text', { x: p.x, y: p.y + r * 0.08, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': r * 1.35 }, inner); t.textContent = it.emoji;
+    } else {
+      const t = el('text', { x: p.x, y: p.y + r * 0.05, 'text-anchor': 'middle', 'dominant-baseline': 'central', class: 'q', 'font-size': r * 1.1 }, inner);
+      t.textContent = it.state === 'empty' ? '×' : '?';
+    }
+  }
+  draw_helpers(G, it) {
+    const p = this.coordinateToPixel(it.x, it.y), ax = this.coordinateToPixel(it.x, 0), ay = this.coordinateToPixel(0, it.y);
+    const g = el('g', { class: 'it-helpers' }, G);
+    if (it.y !== 0) el('line', { x1: p.x, y1: p.y, x2: ax.x, y2: ax.y, class: 'helper' }, g);
+    if (it.x !== 0) el('line', { x1: p.x, y1: p.y, x2: ay.x, y2: ay.y, class: 'helper' }, g);
+    el('circle', { cx: ax.x, cy: ax.y, r: 5, class: 'helper-dot' }, g);
+    el('circle', { cx: ay.x, cy: ay.y, r: 5, class: 'helper-dot' }, g);
+    if (it.values !== false) {
+      const fs = this.geo.fs;
+      const badge = (x, y, txt, anchor) => {
+        const w = fs * (0.62 * txt.length + 1.1), h = fs * 1.5;
+        const bx = anchor === 'below' ? x - w / 2 : x - w - 8, by = anchor === 'below' ? y + 9 : y - h / 2;
+        const b = el('g', { class: 'helper-badge' }, g);
+        el('rect', { x: bx, y: by, width: w, height: h, rx: h / 2 }, b);
+        const t = el('text', { x: bx + w / 2, y: by + h / 2 + fs * 0.35, 'text-anchor': 'middle', 'font-size': fs }, b); t.textContent = txt;
+      };
+      if (it.x !== 0 || it.y === 0) badge(ax.x, ax.y, 'x = ' + fmtNum(it.x), 'below');
+      if (it.y !== 0) badge(ay.x, ay.y, 'y = ' + fmtNum(it.y), 'left');
+      else if (it.x === 0) badge(ay.x, ay.y, 'y = 0', 'left');
+    }
+  }
+  draw_mirror(G, it) {
+    const c = this.cfg, a = it.axis, fs = this.geo.fs;
+    const g = el('g', { class: 'it-mirror' }, G);
+    if (a.type === 'x') {
+      const l = this.coordinateToPixel(c.xmin, 0), r = this.coordinateToPixel(c.xmax, 0);
+      el('line', { x1: l.x, y1: l.y, x2: r.x, y2: r.y, class: 'mirror-band' }, g);
+    } else if (a.type === 'y') {
+      const b = this.coordinateToPixel(0, c.ymin), t = this.coordinateToPixel(0, c.ymax);
+      el('line', { x1: b.x, y1: b.y, x2: t.x, y2: t.y, class: 'mirror-band' }, g);
+    } else if (a.type === 'o') {
+      const o = this.coordinateToPixel(0, 0);
+      el('circle', { cx: o.x, cy: o.y, r: clamp(this.geo.cell * 0.4, 9, 18), class: 'mirror-ring' }, g);
+    } else if (a.type === 'vx') {
+      const b = this.coordinateToPixel(a.c, c.ymin), t = this.coordinateToPixel(a.c, c.ymax);
+      el('line', { x1: b.x, y1: b.y, x2: t.x, y2: t.y, class: 'mirror-line' }, g);
+      const tx = el('text', { x: t.x + 6, y: t.y + fs * 1.1, class: 'mirror-text halo', 'font-size': fs }, g); tx.textContent = 'x = ' + fmtNum(a.c);
+    } else if (a.type === 'hy') {
+      const l = this.coordinateToPixel(c.xmin, a.c), r = this.coordinateToPixel(c.xmax, a.c);
+      el('line', { x1: l.x, y1: l.y, x2: r.x, y2: r.y, class: 'mirror-line' }, g);
+      const tx = el('text', { x: r.x - 4, y: r.y - 7, 'text-anchor': 'end', class: 'mirror-text halo', 'font-size': fs }, g); tx.textContent = 'y = ' + fmtNum(a.c);
+    }
+  }
+  draw_poly(G, it) {
+    const pts = it.pts.map(q => { const p = this.coordinateToPixel(q.x, q.y); return p.x + ',' + p.y; }).join(' ');
+    el(it.closed === false ? 'polyline' : 'polygon', { points: pts, class: 'poly ' + (it.cls || '') + (it.closed === false ? ' open' : '') + (it.anim && it.draw ? ' draw' : ''), pathLength: it.draw ? 1 : null }, G);
+  }
+  draw_segment(G, it) {
+    const a = this.coordinateToPixel(it.x1, it.y1), b = this.coordinateToPixel(it.x2, it.y2);
+    el('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: 'seg-line ' + (it.cls || ''), 'marker-end': it.arrow ? 'url(#' + this.id + '-arrow)' : null }, G);
+  }
+  draw_region(G, it) {
+    const a = this.coordinateToPixel(it.x1, it.y2), b = this.coordinateToPixel(it.x2, it.y1);
+    el('rect', { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(b.x - a.x), height: Math.abs(b.y - a.y), class: 'region ' + (it.cls || '') }, G);
+  }
+  draw_text(G, it) {
+    const p = this.coordinateToPixel(it.x, it.y);
+    const t = el('text', { x: p.x + (it.dx || 0), y: p.y + (it.dy || 0), 'text-anchor': it.anchor || 'middle', 'dominant-baseline': 'central', class: 'it-text halo ' + (it.cls || ''), 'font-size': this.geo.fs * (it.scale || 1) }, G);
+    t.textContent = it.text;
+  }
+
+  /* ---------- Eingabe ---------- */
+  bindEvents() {
+    const s = this.svg; let down = null;
+    s.addEventListener('pointerdown', e => {
+      if (e.button > 0) return;
+      down = { id: e.pointerId, x: e.clientX, y: e.clientY };
+      e.preventDefault();
+    });
+    s.addEventListener('pointerup', e => {
+      if (!down || down.id !== e.pointerId || !this.geo) { down = null; return; }
+      const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
+      down = null;
+      if (moved > 40) return;
+      const p = this.clientToSvg(e.clientX, e.clientY);
+      const snap = this.snapToGrid(p.x, p.y);
+      if (this.onTap) this.onTap(snap, p);
+    });
+    s.addEventListener('pointercancel', () => { down = null; });
+    s.addEventListener('pointermove', e => {
+      if (e.pointerType !== 'mouse' || !this.hoverEnabled || !this.geo) { return; }
+      const p = this.clientToSvg(e.clientX, e.clientY);
+      const sn = this.snapToGrid(p.x, p.y);
+      if (sn.ok) this.showGhost(sn.x, sn.y); else this.hideGhost();
+    });
+    s.addEventListener('pointerleave', () => this.hideGhost());
+  }
+  showGhost(x, y) {
+    const p = this.coordinateToPixel(x, y);
+    if (!this.ghost) this.ghost = el('circle', { class: 'ghost' }, this.gGhost);
+    this.ghost.setAttribute('cx', p.x); this.ghost.setAttribute('cy', p.y);
+    this.ghost.setAttribute('r', clamp(this.geo.cell * 0.22, 6, 12));
+    this.ghost.style.display = '';
+  }
+  hideGhost() { if (this.ghost) this.ghost.style.display = 'none'; }
+  showMiss(px, py) {
+    const c = el('circle', { cx: px, cy: py, r: 14, class: 'miss' }, this.gGhost);
+    setTimeout(() => c.remove(), 600);
+  }
+}
+
+/* =====================================================================
+   5. SOUND (Web Audio API, keine Audiodateien)
+   ===================================================================== */
+const Sound = {
+  ctx: null,
+  ensure() {
+    if (!this.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { this.ctx = new AC(); } catch (e) { return null; }
+    }
+    if (this.ctx.state === 'suspended') { try { this.ctx.resume(); } catch (e) {} }
+    return this.ctx;
+  },
+  tone(f, t0, dur, type, vol, f2) {
+    const c = this.ctx;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(f, t0);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol || 0.15, t0 + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+  },
+  play(name) {
+    if (!settings.sound) return;
+    const c = this.ensure(); if (!c) return;
+    const t = c.currentTime + 0.01;
+    try {
+      switch (name) {
+        case 'correct': this.tone(660, t, 0.12, 'triangle', 0.2); this.tone(990, t + 0.1, 0.22, 'triangle', 0.2); break;
+        case 'wrong': this.tone(260, t, 0.28, 'sawtooth', 0.06, 160); break;
+        case 'treasure': [523, 659, 784, 1047].forEach((f, i) => this.tone(f, t + i * 0.08, 0.22, 'triangle', 0.18)); this.tone(1568, t + 0.34, 0.45, 'sine', 0.1); break;
+        case 'end': [392, 523, 659, 784].forEach((f, i) => this.tone(f, t + i * 0.13, 0.25, 'triangle', 0.18)); this.tone(1047, t + 0.55, 0.7, 'triangle', 0.2); break;
+        case 'help': this.tone(520, t, 0.16, 'sine', 0.1, 760); break;
+        case 'click': this.tone(1100, t, 0.04, 'sine', 0.04); break;
+      }
+    } catch (e) {}
+  }
+};
+
+/* =====================================================================
+   6. AUFGABEN-GENERATOREN
+   ===================================================================== */
+const Game = { active: false, timers: [] };
+let board = null;
+const MERKSATZ = 'Zuerst gehst du auf der x-Achse nach rechts oder links. Danach auf der y-Achse nach oben oder unten.';
+const TREASURES = ['💎', '👑', '🏆', '💰', '⭐', '🔮', '🗝️', '💍'];
+const OBJECTS = [
+  { e: '⭐', n: 'der Stern' }, { e: '💎', n: 'der Diamant' }, { e: '🔑', n: 'der Schlüssel' }, { e: '🚩', n: 'die Flagge' },
+  { e: '🧭', n: 'der Kompass' }, { e: '⚓', n: 'der Anker' }, { e: '👑', n: 'die Krone' }, { e: '⛺', n: 'das Zelt' },
+  { e: '🌴', n: 'die Palme' }, { e: '🔭', n: 'das Fernrohr' }
+];
+const SHAPES = {
+  square:   { name: 'Quadrat',        excl: ['Rechteck', 'Trapez', 'Drachen', 'Parallelogramm', 'Raute'], expl: 'Ein Quadrat hat vier gleich lange Seiten und vier rechte Winkel.' },
+  rect:     { name: 'Rechteck',       excl: ['Trapez', 'Parallelogramm'], expl: 'Ein Rechteck hat vier rechte Winkel; gegenüberliegende Seiten sind gleich lang.' },
+  triangle: { name: 'Dreieck',        excl: [], expl: 'Die Figur hat genau drei Ecken – es ist ein Dreieck.' },
+  trapez:   { name: 'Trapez',         excl: [], expl: 'Ein Trapez hat ein Paar paralleler Seiten.' },
+  kite:     { name: 'Drachen',        excl: [], expl: 'Ein Drachen(viereck) besteht aus zwei Paaren gleich langer, benachbarter Seiten und ist achsensymmetrisch.' },
+  para:     { name: 'Parallelogramm', excl: ['Trapez'], expl: 'Beim Parallelogramm sind gegenüberliegende Seiten parallel und gleich lang – es hat aber keine rechten Winkel.' },
+  house:    { name: 'Fünfeck (Haus)', excl: [], expl: 'Die Figur hat fünf Ecken – ein Fünfeck, das wie ein Haus aussieht.' }
+};
+const SHAPE_NAMES = ['Quadrat', 'Rechteck', 'Dreieck', 'Trapez', 'Drachen', 'Parallelogramm', 'Raute', 'Fünfeck (Haus)'];
+const PRAISE = ['Richtig!', 'Volltreffer!', 'Super!', 'Stark!', 'Genau!', 'Perfekt!'];
+const LETTERS = 'ABCDEFGHJKLMNPQRSTUVW';   // ohne I (Verwechslung mit 1) und O (Ursprung)
+
+function inB(p) { return KJMath.inBounds(p, Game.bounds); }
+function pickFromBag(name, arr) {
+  if (!Game.bags[name] || !Game.bags[name].length) Game.bags[name] = shuffle(arr.slice());
+  return Game.bags[name].pop();
+}
+function nextQuadrant() { return pickFromBag('quad', [1, 2, 3, 4]); }
+function nextLetter() { const l = LETTERS[Game.letterIdx % LETTERS.length]; Game.letterIdx++; return l; }
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+/* Zufallspunkt im aktuellen Zahlenbereich; im erweiterten System werden die Quadranten reihum genutzt */
+function randomPoint(opt) {
+  opt = opt || {};
+  const R = Game.R, ext = Game.system === 'extended';
+  const excl = opt.exclude || [];
+  const maxC = Math.min(opt.max || R, R);
+  const axisChance = opt.axisChance === undefined ? 0.12 : opt.axisChance;
+  for (let i = 0; i < 120; i++) {
+    let x, y;
+    if (!ext) {
+      x = randInt(0, maxC); y = randInt(0, maxC);
+      if ((x === 0 || y === 0) && (i < 80) && Math.random() > axisChance) continue;
+    } else if (Math.random() < axisChance) {
+      const v = randInt(1, maxC) * (Math.random() < 0.5 ? -1 : 1);
+      if (Math.random() < 0.5) { x = 0; y = v; } else { x = v; y = 0; }
+    } else {
+      const q = opt.quadrant || nextQuadrant();
+      const ax = randInt(1, maxC), ay = randInt(1, maxC);
+      x = (q === 2 || q === 3) ? -ax : ax;
+      y = (q === 3 || q === 4) ? -ay : ay;
+    }
+    const p = P(x, y);
+    if (p.x === 0 && p.y === 0) continue;
+    if (!inB(p)) continue;
+    if (Math.abs(p.x) === Math.abs(p.y) && i < 80 && Math.random() < 0.75) continue;  // x ≠ y bevorzugen (Vertauschung erkennbar)
+    if (excl.some(q => eqP(q, p))) continue;
+    const key = p.x + '|' + p.y;
+    if (opt.track !== false) {
+      if (Game.lastKeys.includes(key) && i < 100) continue;
+      Game.lastKeys.push(key); if (Game.lastKeys.length > 8) Game.lastKeys.shift();
+    }
+    return p;
+  }
+  return P(1, 1);
+}
+
+function helpLines(p, values) {
+  return { kind: 'helpers', x: p.x, y: p.y, values: values };
+}
+function tapStep(p, label, prompt, extra) {
+  return Object.assign({
+    kind: 'tap', target: p, label: label, prompt: prompt, ctx: {},
+    explain: () => explainPoint(label, p),
+    help: () => ({ items: [helpLines(p, true)], text: 'Die gestrichelten Hilfslinien zeigen dir, wo sich <b>x = ' + fmtNum(p.x) + '</b> und <b>y = ' + fmtNum(p.y) + '</b> treffen.' })
+  }, extra || {});
+}
+
+/* ---------- Modus 1: Punkt setzen ---------- */
+function generatePointTask() {
+  const p = randomPoint(); const L = nextLetter();
+  return { headline: 'Setze den Punkt ' + coordHTML(L, p) + '.', items: [], steps: [tapStep(p, L, null)], summary: L + fmtPt(p) };
+}
+/* ---------- Modus 2: Koordinaten ablesen ---------- */
+function generateReadTask() {
+  const p = randomPoint(); const L = nextLetter();
+  return {
+    headline: 'Welche Koordinaten hat der Punkt <b>' + L + '</b>?',
+    items: [{ kind: 'point', x: p.x, y: p.y, label: L, ring: true }],
+    steps: [{
+      kind: 'input', target: p, label: L, ctx: {}, explain: () => explainPoint(L, p),
+      help: () => ({ items: [helpLines(p, false)], text: 'Folge den Hilfslinien vom Punkt ' + L + ' zu den Achsen und lies dort die Werte ab.' })
+    }],
+    summary: L + fmtPt(p)
+  };
+}
+/* ---------- Modus 3: Schatzsuche ---------- */
+function generateTreasureTask() {
+  const p = randomPoint({ axisChance: 0 });   // Symbole nie auf den Achsen – Beschriftung bleibt lesbar
+  const typical = [P(p.y, p.x), P(-p.x, p.y), P(p.x, -p.y), P(-p.x, -p.y), P(p.x + 1, p.y), P(p.x, p.y - 1), P(p.x - 1, p.y + 1), P(p.x + 2, p.y + 1)];
+  const spots = [p];
+  for (const q of shuffle(typical)) {
+    if (spots.length >= 3) break;
+    if (inB(q) && q.x !== 0 && q.y !== 0 && !spots.some(s => eqP(s, q))) spots.push(q);
+  }
+  const total = Game.R <= 5 ? 4 : 5;
+  let guard = 0;
+  while (spots.length < total && guard++ < 200) {
+    const q = randomPoint({ exclude: spots, track: false, axisChance: 0 });
+    if (!spots.some(s => eqP(s, q))) spots.push(q);
+  }
+  const emoji = pick(TREASURES);
+  return {
+    headline: 'Finde den Schatz bei ' + coordHTML('', p) + '.',
+    items: shuffle(spots.slice()).map(s => ({ kind: 'spot', x: s.x, y: s.y, state: 'closed', emoji: null })),
+    steps: [tapStep(p, '', null, { treasure: emoji, explain: () => explainPoint('', p).replace('Der Punkt liegt', 'Der Schatz liegt') })],
+    summary: 'Schatz ' + fmtPt(p)
+  };
+}
+/* ---------- Modus 4: Welche Koordinaten? ---------- */
+function generateObjectTask() {
+  const count = Game.R <= 5 ? 3 : 4;
+  const objs = shuffle(OBJECTS.slice()).slice(0, count);
+  const pos = []; let guard = 0;
+  while (pos.length < count && guard++ < 400) {
+    const q = randomPoint({ track: false, axisChance: 0 });
+    if (pos.some(s => eqP(s, q) || (guard < 250 && Math.max(Math.abs(s.x - q.x), Math.abs(s.y - q.y)) < 2))) continue;
+    pos.push(q);
+  }
+  const ti = randInt(0, pos.length - 1);
+  // Manchmal liegt ein anderes Objekt genau auf der „vertauschten“ Position – typische Fehlerquelle
+  if (Math.random() < 0.4 && pos.length > 1) {
+    const t = pos[ti], sw = P(t.y, t.x);
+    if (!eqP(t, sw) && inB(sw) && sw.x !== 0 && sw.y !== 0 && !pos.some(s => eqP(s, sw))) { const j = ti === 0 ? 1 : 0; pos[j] = sw; }
+  }
+  const target = pos[ti], obj = objs[ti];
+  return {
+    headline: 'Welche Koordinaten hat ' + obj.n + ' <span class="em">' + obj.e + '</span>?',
+    items: pos.map((q, i) => ({ kind: 'icon', x: q.x, y: q.y, emoji: objs[i].e })),
+    steps: [{
+      kind: 'input', target: target, label: '', ctx: {},
+      explain: () => explainPoint('', target).replace('Der Punkt liegt', cap(obj.n) + ' liegt'),
+      help: () => ({ items: [helpLines(target, false)], text: 'Folge den Hilfslinien von ' + obj.n.replace(/^der /, 'dem ').replace(/^die /, 'der ').replace(/^das /, 'dem ') + ' zu den Achsen.' })
+    }],
+    summary: obj.e + ' ' + fmtPt(target)
+  };
+}
+/* ---------- Modus 5: Figurenjagd ---------- */
+function buildShape(kind, M) {
+  let pts = null;
+  switch (kind) {
+    case 'square': { if (M < 2) return null; const s = randInt(2, Math.min(M, 6)); pts = [[0, 0], [s, 0], [s, s], [0, s]]; break; }
+    case 'rect': {
+      if (M < 3) return null; let w, h, g = 0;
+      do { w = randInt(2, Math.min(M, 8)); h = randInt(1, Math.min(M, 6)); } while (w === h && g++ < 50);
+      if (w === h) return null; pts = [[0, 0], [w, 0], [w, h], [0, h]]; break;
+    }
+    case 'triangle': {
+      const w = randInt(2, Math.min(M, 7)), h = randInt(2, Math.min(M, 6));
+      const a = Math.random() < 0.35 ? 0 : (w % 2 === 0 && Math.random() < 0.6 ? w / 2 : randInt(0, w));
+      pts = [[0, 0], [w, 0], [a, h]]; break;
+    }
+    case 'trapez': {
+      if (M < 3) return null;
+      const b = randInt(3, Math.min(M, 8)), t = randInt(1, b - 2), a = randInt(0, b - t), h = randInt(2, Math.max(2, Math.min(M, 5)));
+      if (h > M) return null;
+      pts = [[0, 0], [b, 0], [a + t, h], [a, h]]; break;
+    }
+    case 'kite': {
+      if (M < 3) return null;
+      const w = randInt(1, Math.max(1, Math.min(3, Math.floor(M / 2)))); let u, t, g = 0;
+      do { u = randInt(1, Math.min(3, M - 1)); t = randInt(1, Math.max(1, Math.min(6, M - u))); } while (u === t && g++ < 50);
+      if (u === t || u + t > M || 2 * w > M) return null;
+      pts = [[w, 0], [2 * w, u], [w, u + t], [0, u]]; break;
+    }
+    case 'para': {
+      if (M < 4) return null; let w, h, o, g = 0;
+      do { w = randInt(2, Math.min(M - 1, 6)); h = randInt(2, Math.min(M, 5)); o = randInt(1, Math.max(1, Math.min(3, M - w))); }
+      while ((w * w === o * o + h * h || w + o > M) && g++ < 50);
+      if (w * w === o * o + h * h || w + o > M) return null;
+      pts = [[0, 0], [w, 0], [w + o, h], [o, h]]; break;
+    }
+    case 'house': {
+      if (M < 3) return null;
+      const k = randInt(1, Math.max(1, Math.min(3, Math.floor(M / 2)))), h = randInt(2, Math.max(2, Math.min(M - 1, 5))), r = randInt(1, Math.max(1, Math.min(3, M - h)));
+      if (h + r > M || 2 * k > M) return null;
+      pts = [[0, 0], [2 * k, 0], [2 * k, h], [k, h + r], [0, h]]; break;
+    }
+  }
+  if (!pts) return null;
+  if (kind !== 'house') {
+    if (Math.random() < 0.3) pts = pts.map(([x, y]) => [y, x]);
+    if (Math.random() < 0.5) { const mx = Math.max(...pts.map(p => p[0])); pts = pts.map(([x, y]) => [mx - x, y]); }
+    if (Math.random() < 0.5) { const my = Math.max(...pts.map(p => p[1])); pts = pts.map(([x, y]) => [x, my - y]); }
+  }
+  const minX = Math.min(...pts.map(p => p[0])), minY = Math.min(...pts.map(p => p[1]));
+  pts = pts.map(([x, y]) => [x - minX, y - minY]);
+  const w = Math.max(...pts.map(p => p[0])), h = Math.max(...pts.map(p => p[1]));
+  if (w > M || h > M) return null;
+  return pts;
+}
+function figureOptions(kind) {
+  const name = SHAPES[kind].name;
+  const pool = shuffle(SHAPE_NAMES.filter(n => n !== name && !SHAPES[kind].excl.includes(n)));
+  return shuffle([name].concat(pool.slice(0, 3)));
+}
+function generateFigureTask() {
+  const b = Game.bounds;
+  const span = Math.min(b.xmax - b.xmin, b.ymax - b.ymin);
+  const M = Math.min(span, Game.system === 'extended' ? 10 : 8);
+  let kind, local = null;
+  for (let i = 0; i < 40 && !local; i++) { kind = pickFromBag('shape', Object.keys(SHAPES)); local = buildShape(kind, M); }
+  if (!local) { kind = 'triangle'; local = [[0, 0], [2, 0], [0, 2]]; }
+  const w = Math.max(...local.map(p => p[0])), h = Math.max(...local.map(p => p[1]));
+  const ox = randInt(b.xmin, b.xmax - w), oy = randInt(b.ymin, b.ymax - h);
+  let pts = local.map(([x, y]) => P(x + ox, y + oy));
+  const s = randInt(0, pts.length - 1);
+  pts = pts.slice(s).concat(pts.slice(0, s));
+  const steps = pts.map((p, i) => tapStep(p, LETTERS[i], 'Setze ' + coordHTML(LETTERS[i], p) + '.'));
+  const name = SHAPES[kind].name;
+  steps.push({
+    kind: 'choice', options: figureOptions(kind), answer: name, prompt: 'Welche Figur ist entstanden?',
+    explain: () => SHAPES[kind].expl,
+    help: () => ({ items: [], text: 'Zähle die Ecken. Prüfe dann: Sind Seiten parallel? Sind Seiten gleich lang? Gibt es rechte Winkel?' })
+  });
+  const task = {
+    headline: 'Figurenjagd: Setze die Punkte nacheinander.',
+    items: [], steps: steps, kind: kind, shapeName: name, figurePts: pts,
+    pointList: pts.map((p, i) => ({ label: LETTERS[i], p: p, state: 'todo' })),
+    summary: name
+  };
+  task.onStepDone = (i) => {
+    if (i >= pts.length) return;
+    board.remove(it => it.tag === 'figline');
+    const placed = pts.slice(0, i + 1);
+    if (i === pts.length - 1) board.add({ kind: 'poly', pts: placed, closed: true, draw: true, tag: 'figline' });
+    else if (placed.length >= 2) board.add({ kind: 'poly', pts: placed, closed: false, tag: 'figline', anim: false });
+  };
+  return task;
+}
+/* ---------- Modus 6: Spiegeljagd ---------- */
+function mirrorExplain(o, a, L) {
+  const m = KJMath.mirror(o, a), A = coordHTML(L, o), A2 = coordHTML(L + '′', m);
+  switch (a.type) {
+    case 'y': return 'Spiegelung an der y-Achse: Der y-Wert bleibt gleich, der x-Wert bekommt das umgekehrte Vorzeichen. ' + A + ' → ' + A2 + '.';
+    case 'x': return 'Spiegelung an der x-Achse: Der x-Wert bleibt gleich, der y-Wert bekommt das umgekehrte Vorzeichen. ' + A + ' → ' + A2 + '.';
+    case 'o': return 'Spiegelung am Ursprung: Beide Koordinaten bekommen das umgekehrte Vorzeichen. ' + A + ' → ' + A2 + '.';
+    case 'vx': return L + ' ist ' + units(o.x - a.c) + ' von der Spiegelachse x = ' + fmtNum(a.c) + ' entfernt. ' + L + '′ liegt auf der anderen Seite genauso weit entfernt: ' + A2 + '.';
+    case 'hy': return L + ' ist ' + units(o.y - a.c) + ' von der Spiegelachse y = ' + fmtNum(a.c) + ' entfernt. ' + L + '′ liegt auf der anderen Seite genauso weit entfernt: ' + A2 + '.';
+  }
+  return '';
+}
+function mirrorFoot(o, a) {
+  switch (a.type) { case 'x': return P(o.x, 0); case 'y': return P(0, o.y); case 'o': return P(0, 0); case 'vx': return P(a.c, o.y); case 'hy': return P(o.x, a.c); }
+}
+function mirrorRule(a) {
+  return { x: 'An der x-Achse: x bleibt, y wechselt das Vorzeichen.', y: 'An der y-Achse: y bleibt, x wechselt das Vorzeichen.', o: 'Am Ursprung: x und y wechseln das Vorzeichen.',
+    vx: 'Gleicher Abstand zur Spiegelachse – nur auf der anderen Seite. y bleibt gleich.', hy: 'Gleicher Abstand zur Spiegelachse – nur auf der anderen Seite. x bleibt gleich.' }[a.type];
+}
+function generateMirrorTask() {
+  const ext = Game.system === 'extended', R = Game.R;
+  let axis;
+  if (ext) axis = { type: pickFromBag('axis', ['x', 'y', 'o']) };
+  else { const c = randInt(1, R - 1); axis = { type: Math.random() < 0.5 ? 'vx' : 'hy', c: c }; }
+  const valid = p => inB(p) && inB(KJMath.mirror(p, axis)) && !eqP(p, KJMath.mirror(p, axis)) && !(p.x === 0 && p.y === 0);
+  const side = p => axis.type === 'vx' ? Math.sign(p.x - axis.c) : axis.type === 'hy' ? Math.sign(p.y - axis.c) : 0;
+  const asFigure = Math.random() < 0.3 && R >= 4;
+  let origs = null;
+  for (let i = 0; i < 300 && !origs; i++) {
+    if (!asFigure || i > 250) {
+      const p = ext ? randomPoint({ axisChance: 0 }) : P(randInt(0, R), randInt(0, R));
+      if (valid(p)) origs = [p];
+    } else {
+      let tri;
+      if (ext) {
+        const q = randInt(1, 4), sx = (q === 2 || q === 3) ? -1 : 1, sy = (q === 3 || q === 4) ? -1 : 1, m = Math.min(R, 6);
+        tri = [0, 1, 2].map(() => P(sx * randInt(1, m), sy * randInt(1, m)));
+      } else {
+        tri = [0, 1, 2].map(() => P(randInt(0, R), randInt(0, R)));
+      }
+      if (!tri.every(valid)) continue;
+      if (!ext && !(side(tri[0]) === side(tri[1]) && side(tri[1]) === side(tri[2]))) continue;
+      if (eqP(tri[0], tri[1]) || eqP(tri[1], tri[2]) || eqP(tri[0], tri[2])) continue;
+      if (KJMath.area2(tri[0], tri[1], tri[2]) === 0) continue;
+      origs = tri;
+    }
+  }
+  if (!origs) { axis = ext ? { type: 'y' } : { type: 'vx', c: Math.floor(R / 2) }; origs = [ext ? P(2, 1) : P(Math.max(0, Math.floor(R / 2) - 1), 1)]; }
+  const imgs = origs.map(p => KJMath.mirror(p, axis));
+  const items = [{ kind: 'mirror', axis: axis }];
+  origs.forEach((p, i) => items.push({ kind: 'point', x: p.x, y: p.y, label: LETTERS[i], cls: 'orig' }));
+  if (origs.length > 1) items.push({ kind: 'poly', pts: origs, cls: 'orig' });
+  const steps = origs.map((p, i) => {
+    const L = LETTERS[i];
+    return tapStep(imgs[i], L + '′', 'Setze den Bildpunkt <b>' + L + '′</b>.', {
+      ctx: { orig: p, axis: axis },
+      explain: () => mirrorExplain(p, axis, L),
+      help: () => {
+        const f = mirrorFoot(p, axis);
+        return { items: [{ kind: 'segment', x1: p.x, y1: p.y, x2: f.x, y2: f.y, cls: 'vec' }], text: 'Die gestrichelte Linie zeigt den Weg von ' + L + ' zur Spiegelachse. ' + mirrorRule(axis) };
+      }
+    });
+  });
+  const task = {
+    headline: origs.length === 1
+      ? 'Spiegle ' + coordHTML('A', origs[0]) + ' ' + axisText(axis) + '.'
+      : 'Spiegle das Dreieck ABC ' + axisText(axis) + ': ' + origs.map((p, i) => coordHTML(LETTERS[i], p)).join(', ') + '.',
+    items: items, steps: steps, summary: 'Spiegeln ' + (origs.length === 1 ? 'A' + fmtPt(origs[0]) : 'Dreieck') + ' ' + axisText(axis).replace(/^an der |^am /, ''),
+    pointList: origs.length > 1 ? origs.map((p, i) => ({ label: LETTERS[i] + '′', p: null, state: 'todo' })) : null
+  };
+  task.onStepDone = (i) => { if (origs.length > 1 && i === origs.length - 1) board.add({ kind: 'poly', pts: imgs, draw: true, tag: 'img' }); };
+  return task;
+}
+/* ---------- Modus 7: Verschieben ---------- */
+function moveText(v, asVector) {
+  if (asVector) return 'um den Vektor ' + vecHTML(v);
+  const parts = [];
+  if (v.x) parts.push(units(v.x) + ' nach ' + (v.x > 0 ? 'rechts' : 'links'));
+  if (v.y) parts.push(units(v.y) + ' nach ' + (v.y > 0 ? 'oben' : 'unten'));
+  return 'um ' + parts.join(' und ');
+}
+function moveExplain(o, v, L) {
+  const m = KJMath.move(o, v);
+  const part = (a, d) => fmtNum(a) + ' ' + (d >= 0 ? '+' : MINUS) + ' ' + Math.abs(d) + ' = ' + fmtNum(a + d);
+  return 'Rechne: x: ' + part(o.x, v.x) + ', y: ' + part(o.y, v.y) + '. Also ' + coordHTML(L + '′', m) + '.';
+}
+function generateMoveTask() {
+  const b = Game.bounds, span = b.xmax - b.xmin;
+  const maxS = clamp(Math.floor(span * 0.6), 1, 7);
+  const asFigure = Math.random() < 0.3 && span >= 6;
+  const asVector = settings.moveVector && (Game.system === 'extended' || settings.difficulty === 'hard') && Math.random() < 0.5;
+  let v, origs = null;
+  for (let i = 0; i < 300 && !origs; i++) {
+    if (Math.random() < 0.3) { const d = randInt(1, maxS) * (Math.random() < 0.5 ? -1 : 1); v = Math.random() < 0.5 ? P(d, 0) : P(0, d); }
+    else v = P(randInt(1, maxS) * (Math.random() < 0.5 ? -1 : 1), randInt(1, maxS) * (Math.random() < 0.5 ? -1 : 1));
+    if (Game.system === 'normal' && i < 150 && Math.random() < 0.5) v = P(Math.abs(v.x), v.y);
+    let local;
+    if (asFigure && i < 250) {
+      local = [P(0, 0), P(randInt(1, 3), randInt(0, 3)), P(randInt(0, 3), randInt(1, 3))];
+      if (KJMath.area2(local[0], local[1], local[2]) === 0) continue;
+      const mnx = Math.min(...local.map(p => p.x)), mny = Math.min(...local.map(p => p.y));
+      local = local.map(p => P(p.x - mnx, p.y - mny));
+    } else local = [P(0, 0)];
+    const w = Math.max(...local.map(p => p.x)), h = Math.max(...local.map(p => p.y));
+    const xlo = Math.max(b.xmin, b.xmin - v.x), xhi = Math.min(b.xmax - w, b.xmax - w - v.x);
+    const ylo = Math.max(b.ymin, b.ymin - v.y), yhi = Math.min(b.ymax - h, b.ymax - h - v.y);
+    if (xlo > xhi || ylo > yhi) continue;
+    const ox = randInt(xlo, xhi), oy = randInt(ylo, yhi);
+    const cand = local.map(p => P(p.x + ox, p.y + oy));
+    if (cand.length === 1 && cand[0].x === 0 && cand[0].y === 0 && i < 200) continue;
+    origs = cand;
+  }
+  if (!origs) { v = P(1, 0); origs = [P(b.xmin, b.ymin + 1)]; }
+  const imgs = origs.map(p => KJMath.move(p, v));
+  const items = [];
+  origs.forEach((p, i) => items.push({ kind: 'point', x: p.x, y: p.y, label: LETTERS[i], cls: 'orig' }));
+  if (origs.length > 1) items.push({ kind: 'poly', pts: origs, cls: 'orig' });
+  const steps = origs.map((p, i) => {
+    const L = LETTERS[i];
+    return tapStep(imgs[i], L + '′', 'Setze den Bildpunkt <b>' + L + '′</b>.', {
+      ctx: { orig: p, move: v },
+      explain: () => moveExplain(p, v, L),
+      help: () => {
+        const first = v.x !== 0 ? P(p.x + v.x, p.y) : P(p.x, p.y + v.y);
+        const txt = v.x !== 0
+          ? 'Gehe von ' + L + ' zuerst ' + units(v.x) + ' nach ' + (v.x > 0 ? 'rechts' : 'links') + (v.y ? ', danach ' + units(v.y) + ' nach ' + (v.y > 0 ? 'oben' : 'unten') : '') + '.'
+          : 'Gehe von ' + L + ' ' + units(v.y) + ' nach ' + (v.y > 0 ? 'oben' : 'unten') + '.';
+        return { items: [{ kind: 'segment', x1: p.x, y1: p.y, x2: first.x, y2: first.y, cls: 'vec', arrow: true }], text: txt };
+      }
+    });
+  });
+  const task = {
+    headline: origs.length === 1
+      ? 'Verschiebe ' + coordHTML('A', origs[0]) + ' ' + moveText(v, asVector) + '.'
+      : 'Verschiebe das Dreieck ABC ' + moveText(v, asVector) + ': ' + origs.map((p, i) => coordHTML(LETTERS[i], p)).join(', ') + '.',
+    items: items, steps: steps,
+    summary: 'Verschieben um (' + fmtSigned(v.x) + '|' + fmtSigned(v.y) + ')',
+    pointList: origs.length > 1 ? origs.map((p, i) => ({ label: LETTERS[i] + '′', p: null, state: 'todo' })) : null
+  };
+  task.onStepDone = (i) => { if (origs.length > 1 && i === origs.length - 1) board.add({ kind: 'poly', pts: imgs, draw: true, tag: 'img' }); };
+  return task;
+}
+
+const GENERATORS = { place: generatePointTask, read: generateReadTask, treasure: generateTreasureTask, objects: generateObjectTask, figure: generateFigureTask, mirror: generateMirrorTask, move: generateMoveTask };
+function generateTask() {
+  if (!Game.typeBag.length) {
+    Game.typeBag = shuffle(Game.types.slice());
+    const n = Game.typeBag.length;
+    if (n > 1 && Game.typeBag[n - 1] === Game.lastType) { [Game.typeBag[0], Game.typeBag[n - 1]] = [Game.typeBag[n - 1], Game.typeBag[0]]; }
+  }
+  const type = Game.typeBag.pop();
+  Game.lastType = type;
+  const t = GENERATORS[type]();
+  t.type = type;
+  return t;
+}
+
+/* =====================================================================
+   7. SPIELABLAUF
+   ===================================================================== */
+function schedule(fn, ms) { const id = setTimeout(fn, ms); Game.timers.push(id); return id; }
+function clearTimers() { (Game.timers || []).forEach(clearTimeout); Game.timers = []; }
+function curStep() { return Game.task ? Game.task.steps[Game.stepIdx] : null; }
+function boardConfig() {
+  return Object.assign({}, Game.bounds, { gridMode: settings.gridMode, ticks: settings.ticks, labels: settings.labels, axisLabels: settings.axisLabels });
+}
+
+function startGame(mode) {
+  clearTimers(); stopTaskTimer();
+  const sys = settings.system;
+  Object.assign(Game, {
+    active: true, mode: mode, system: sys, R: getRange(sys), bounds: getBounds(sys),
+    total: mode === 'game' ? getTaskCount() : Infinity, index: 0, score: 0, results: [], helpsUsed: 0,
+    errors: {}, treasures: 0, typeBag: [], bags: {}, lastKeys: [], letterIdx: 0, lastType: null, task: null, lock: false, fbAction: null
+  });
+  Game.types = enabledTypes();
+  showScreen('game');
+  board.setConfig(boardConfig());
+  $('#hud-mode').textContent = mode === 'training' ? 'Training' : 'Expedition';
+  $('#hud-score-wrap').hidden = mode === 'training' || !settings.showPoints;
+  $('#btn-end-training').hidden = mode !== 'training';
+  $('#hud-treasure').hidden = !Game.types.includes('treasure');
+  $('#help-cost').textContent = MINUS + settings.helpCost;
+  $('#help-cost').hidden = mode === 'training' || !settings.helpCost || !settings.showPoints;
+  $('#btn-help').hidden = !settings.helpAllowed;
+  $('#hud-score').textContent = '0';
+  nextTask();
+}
+
+function nextTask() {
+  clearTimers(); stopTaskTimer();
+  if (!Game.active) return;
+  if (Game.mode === 'game' && Game.index >= Game.total) { endGame(); return; }
+  Game.index++;
+  const t = generateTask();
+  Game.task = t;
+  t.start = now(); t.active = 0; t.stepScores = []; t.help = 0; t.timedOut = false;
+  Game.stepIdx = 0;
+  board.items = t.items.map(it => Object.assign({ anim: true }, it));
+  board.renderItems();
+  updateHud();
+  startTaskTimer();
+  setupStep();
+}
+
+function setupStep() {
+  const s = curStep();
+  Game.attempt = 0; Game.stepHelp = false; Game.lock = false; Game.fbAction = null;
+  board.remove(it => it.tag === 'help');
+  hideFeedback();
+  renderTaskCard();
+  showArea(s.kind);
+  board.hoverEnabled = s.kind === 'tap';
+  if (s.kind === 'input') resetInput(s);
+  if (s.kind === 'choice') renderChoices(s);
+  $('#btn-help').disabled = !s.help;
+}
+function showArea(kind) {
+  $('#area-tap').hidden = kind !== 'tap';
+  $('#area-input').hidden = kind !== 'input';
+  $('#area-choice').hidden = kind !== 'choice';
+}
+
+function renderTaskCard() {
+  const t = Game.task, s = curStep();
+  const info = TYPE_INFO[t.type];
+  $('#task-cat-ico').innerHTML = icon(info.icon);
+  $('#task-cat').textContent = info.name;
+  $('#task-text').innerHTML = t.headline;
+  const list = $('#task-list');
+  if (t.pointList) {
+    list.innerHTML = t.pointList.map((e, i) => {
+      let st = e.state === 'todo' && i === Game.stepIdx ? 'cur' : (e.state === 'todo' ? '' : e.state);
+      const mark = e.state === 'ok' ? ' ✓' : e.state === 'bad' ? ' ✗' : '';
+      return '<span class="pt ' + st + '">' + e.label + (e.p ? fmtPt(e.p) : '') + mark + '</span>';
+    }).join('');
+  } else list.innerHTML = '';
+  $('#task-step').innerHTML = (t.steps.length > 1 && s && s.prompt) ? s.prompt : '';
+}
+
+function updateHud() {
+  const prog = Game.mode === 'game' ? 'Aufgabe ' + Game.index + ' / ' + Game.total : 'Aufgabe ' + Game.index;
+  $('#hud-progress').textContent = prog;
+  $('#hud-pbar').style.width = Game.mode === 'game' ? (100 * (Game.index - 1) / Game.total) + '%' : '0%';
+  $('#hud-score').textContent = Game.score;
+  $('#hud-treasure-n').textContent = Game.treasures;
+}
+
+/* ---------- Timer (zählt nur, solange eine Eingabe möglich ist) ---------- */
+function startTaskTimer() {
+  stopTaskTimer();
+  const t = Game.task, lim = settings.timeLimit;
+  const show = Game.mode === 'game' && lim > 0;
+  $('#hud-timer').hidden = !show;
+  t.limit = show ? Math.round(lim * (1 + (t.steps.length - 1) * 0.5)) : 0;
+  let last = now();
+  const tick = () => {
+    const n = now(), dt = (n - last) / 1000; last = n;
+    if (!Game.active || Game.task !== t) return;
+    if (!Game.lock && !Game.modalOpen) t.active += dt;
+    if (t.limit) {
+      const left = Math.max(0, t.limit - t.active);
+      $('#hud-time').textContent = Math.ceil(left) + ' s';
+      $('#hud-tbar').style.width = (100 * left / t.limit) + '%';
+      $('#hud-tbar-wrap').classList.toggle('low', left < 5);
+      if (left <= 0 && !Game.lock) onTimeout();
+    }
+  };
+  tick();
+  Game.timerInt = setInterval(tick, 100);
+}
+function stopTaskTimer() { if (Game.timerInt) clearInterval(Game.timerInt); Game.timerInt = null; }
+function onTimeout() {
+  const t = Game.task, s = curStep();
+  t.timedOut = true;
+  Game.errors.timeout = (Game.errors.timeout || 0) + 1;
+  Game.lock = true;
+  Sound.play('wrong');
+  t.stepScores[Game.stepIdx] = 0;
+  if (t.pointList) t.pointList[Game.stepIdx].state = 'bad';
+  revealSolution(s, null, 'timeout');
+}
+
+/* ---------- Eingaben ---------- */
+function handleGridClick(snap, raw) {
+  if (!Game.active || Game.lock || Game.modalOpen) return;
+  const s = curStep(); if (!s) return;
+  if (s.kind !== 'tap') {
+    toast(s.kind === 'input' ? 'Gib die Koordinaten unten über die Zahlentastatur ein.' : 'Wähle unten die passende Antwort.');
+    return;
+  }
+  if (!snap.ok) { board.showMiss(raw.x, raw.y); toast('Tippe genauer auf einen Kreuzungspunkt des Rasters.'); return; }
+  checkAnswer(P(snap.x, snap.y));
+}
+const Inp = { x: '', y: '', active: 'x' };
+function resetInput(s) {
+  Inp.x = ''; Inp.y = ''; Inp.active = 'x';
+  $('#ce-label').textContent = s.label || '';
+  $('#k-sign').disabled = Game.system !== 'extended';
+  renderInput();
+}
+function renderInput() {
+  ['x', 'y'].forEach(f => {
+    const b = $('#ce-' + f);
+    b.querySelector('.v').textContent = Inp[f].replace('-', MINUS);
+    b.classList.toggle('active', Inp.active === f);
+    b.classList.remove('err', 'okk');
+  });
+}
+function keyInput(k) {
+  const s = curStep();
+  if (!Game.active || Game.lock || !s || s.kind !== 'input' || Game.modalOpen) return;
+  const f = Inp.active; let v = Inp[f];
+  if (/^\d$/.test(k)) {
+    if (v.replace('-', '') === '0') v = v.replace('0', '');
+    if (v.replace('-', '').length < 3) v += k;
+  } else if (k === 'sign' || k === '-') {
+    if (Game.system !== 'extended') { toast('Im normalen Koordinatensystem gibt es keine negativen Zahlen.'); return; }
+    v = v.charAt(0) === '-' ? v.slice(1) : '-' + v;
+  } else if (k === 'back') {
+    if (v === '' && f === 'y') { Inp.active = 'x'; renderInput(); return; }
+    v = v.slice(0, -1);
+  } else if (k === 'switch') { Inp.active = f === 'x' ? 'y' : 'x'; renderInput(); return; }
+  else if (k === 'ok') { submitInput(); return; }
+  else return;
+  Inp[f] = v; renderInput();
+}
+function submitInput() {
+  const okNum = s => /^-?\d+$/.test(s);
+  if (!okNum(Inp.x)) { Inp.active = 'x'; renderInput(); toast('Bitte gib zuerst den x-Wert ein.'); return; }
+  if (!okNum(Inp.y)) {
+    const wasX = Inp.active === 'x'; Inp.active = 'y'; renderInput();
+    if (!wasX || Inp.y !== '') toast('Bitte gib noch den y-Wert ein.');
+    return;
+  }
+  checkAnswer(P(parseInt(Inp.x, 10), parseInt(Inp.y, 10)));
+}
+function renderChoices(s) {
+  const c = $('#choices'); c.innerHTML = '';
+  s.options.forEach((o, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = o; b.dataset.idx = i;
+    b.addEventListener('click', () => { if (Game.lock || b.disabled) return; Game.lastChoiceBtn = b; checkAnswer(o); });
+    c.appendChild(b);
+  });
+}
+
+/* ---------- Prüfen ---------- */
+function checkAnswer(ans) {
+  const s = curStep();
+  if (!s || Game.lock) return;
+  hideFeedback();
+  Game.attempt++;
+  const correct = s.kind === 'choice' ? ans === s.answer : eqP(ans, s.target);
+  if (correct) onCorrect(ans); else onWrong(ans);
+}
+function onCorrect() {
+  const t = Game.task, s = curStep();
+  Game.lock = true;
+  t.stepScores[Game.stepIdx] = [1, 0.5, 0.25][Game.attempt - 1] || 0.25;
+  if (s.kind === 'tap') {
+    if (s.treasure) {
+      const sp = board.items.find(it => it.kind === 'spot' && eqP(it, s.target));
+      if (sp) { sp.state = 'found'; sp.emoji = s.treasure; sp.anim = true; board.renderItems(); }
+      Game.treasures++; updateHud(); Sound.play('treasure');
+    } else {
+      board.add({ kind: 'point', x: s.target.x, y: s.target.y, label: s.label, cls: 'ok', tag: 'placed' });
+      Sound.play('correct');
+    }
+  } else if (s.kind === 'input') {
+    $('#ce-x').classList.add('okk'); $('#ce-y').classList.add('okk');
+    board.add({ kind: 'point', x: s.target.x, y: s.target.y, label: s.label && s.label.length === 1 ? s.label : '', showCoords: true, cls: 'ok', tag: 'placed' });
+    Sound.play('correct');
+  } else {
+    if (Game.lastChoiceBtn) Game.lastChoiceBtn.classList.add('ok');
+    Sound.play('correct');
+  }
+  if (t.pointList && t.pointList[Game.stepIdx]) t.pointList[Game.stepIdx].state = 'ok';
+  if (t.onStepDone) t.onStepDone(Game.stepIdx, true);
+  renderTaskCard();
+  if (Game.stepIdx >= t.steps.length - 1) finishTask(false);
+  else schedule(() => { Game.stepIdx++; setupStep(); }, 550);
+}
+function onWrong(ans) {
+  const t = Game.task, s = curStep();
+  Game.lock = true;
+  const an = s.kind === 'choice' ? { type: 'figure', msg: '' } : analyzeAnswer(ans, s.target, s.ctx);
+  if (an) Game.errors[an.type] = (Game.errors[an.type] || 0) + 1;
+  Sound.play('wrong');
+  const final = Game.mode === 'training' || Game.attempt >= settings.attempts;
+  let tmp = null;
+  if (s.kind === 'tap') {
+    const spot = board.items.find(it => it.kind === 'spot' && eqP(it, ans) && it.state !== 'found');
+    if (spot) { spot.state = 'empty'; spot.anim = true; board.renderItems(); }
+    else tmp = board.add({ kind: 'point', x: ans.x, y: ans.y, cls: 'bad', cross: true, label: s.label ? s.label + '?' : '', tag: 'wrong' });
+  } else if (s.kind === 'input') {
+    $('#ce-x').classList.toggle('err', ans.x !== s.target.x);
+    $('#ce-y').classList.toggle('err', ans.y !== s.target.y);
+    if (KJMath.inBounds(ans, Game.bounds)) tmp = board.add({ kind: 'point', x: ans.x, y: ans.y, cls: 'bad', cross: true, label: 'Deine Eingabe', tag: 'wrong' });
+  } else if (Game.lastChoiceBtn) {
+    Game.lastChoiceBtn.classList.add('bad');
+  }
+  if (!final) {
+    const left = settings.attempts - Game.attempt;
+    const tip = an && an.msg && an.type !== 'other' ? '<span class="tip">' + an.msg + '</span>' : '';
+    showFeedback('bad', 'Leider nicht richtig.', 'Du hast noch ' + (left === 1 ? 'einen Versuch' : left + ' Versuche') + '.' + tip, null);
+    schedule(() => {
+      if (tmp) board.remove(it => it === tmp);
+      if (s.kind === 'choice' && Game.lastChoiceBtn) Game.lastChoiceBtn.disabled = true;
+      Game.lock = false;
+      if (s.kind === 'input') { Inp.active = ans.x !== s.target.x ? 'x' : 'y'; renderInput(); }
+    }, 1000);
+    return;
+  }
+  t.stepScores[Game.stepIdx] = 0;
+  if (t.pointList && t.pointList[Game.stepIdx]) t.pointList[Game.stepIdx].state = 'bad';
+  revealSolution(s, an, null);
+}
+function revealSolution(s, an, reason) {
+  const t = Game.task;
+  const showSol = Game.mode === 'training' || settings.showSolution;
+  const multi = t.steps.length > 1;
+  if (s.kind === 'tap' || s.kind === 'input') {
+    if (s.treasure) {
+      const sp = board.items.find(it => it.kind === 'spot' && eqP(it, s.target));
+      if (sp && showSol) { sp.state = 'found'; sp.emoji = s.treasure; sp.anim = true; board.renderItems(); }
+    }
+    const solLabel = s.kind === 'input' ? '' : (s.label && s.label.length <= 2 ? s.label : '');
+    if (showSol || multi) board.add({ kind: 'solution', x: s.target.x, y: s.target.y, label: solLabel, showCoords: showSol, tag: 'sol' });
+    if (showSol) board.add({ kind: 'helpers', x: s.target.x, y: s.target.y, values: true, tag: 'help' });
+  } else if (showSol) {
+    $$('#choices button').forEach(b => { if (b.textContent === s.answer) b.classList.add('ok'); b.disabled = true; });
+  }
+  renderTaskCard();
+  if (t.onStepDone) t.onStepDone(Game.stepIdx, false);
+  let msg = '';
+  if (an && an.msg) msg += '<span class="tip">' + an.msg + '</span>';
+  if (showSol) {
+    if (s.kind === 'choice') msg += '<p>Richtig ist: <b>' + s.answer + '</b>. ' + s.explain() + '</p>';
+    else msg += '<p>Richtig ist ' + coordHTML(s.label || '', s.target) + '. ' + s.explain() + '</p>';
+  }
+  if (multi && Game.stepIdx < t.steps.length - 1 && !t.timedOut) msg += '<p>Der richtige Punkt wurde eingetragen – weiter geht\'s!</p>';
+  showArea(null);
+  showFeedback('bad', reason === 'timeout' ? 'Zeit abgelaufen!' : 'Leider nicht richtig.', msg, continueAfterFail);
+}
+function continueAfterFail() {
+  const t = Game.task;
+  if (!t.timedOut && Game.stepIdx < t.steps.length - 1) { Game.stepIdx++; setupStep(); return; }
+  for (let i = 0; i < t.steps.length; i++) if (t.stepScores[i] === undefined) t.stepScores[i] = 0;
+  finishTask(true);
+}
+function finishTask(afterFail) {
+  const t = Game.task;
+  stopTaskTimer();
+  const n = t.steps.length;
+  const scores = t.steps.map((_, i) => t.stepScores[i] || 0);
+  const avg = scores.reduce((a, b) => a + b, 0) / n;
+  const allFirst = scores.every(v => v === 1);
+  const correct = scores.every(v => v > 0) && !t.timedOut;
+  const time = Math.max(t.active, 0.1);
+  let bonus = 0;
+  if (Game.mode === 'game' && allFirst && settings.timeBonus && !t.timedOut) {
+    const per = time / (1 + (n - 1) * 0.6);
+    bonus = per <= 4 ? 50 : per <= 8 ? 30 : per <= 15 ? 10 : 0;
+  }
+  const penalty = Game.mode === 'game' ? t.help * settings.helpCost : 0;
+  const base = Math.round(100 * avg);
+  const pts = Game.mode === 'game' ? Math.max(0, base + bonus - penalty) : 0;
+  Game.score += pts;
+  Game.results.push({ type: t.type, correct: correct, firstTry: allFirst, points: pts, bonus: bonus, time: time, help: t.help, summary: t.summary });
+  updateHud();
+  if (pts > 0 && settings.showPoints) floatPoints('+' + pts, false);
+  if (afterFail) { nextTask(); return; }
+  // Erfolg
+  const s = curStep();
+  let title = allFirst ? pick(PRAISE) : (correct ? 'Richtig – im ' + Game.attempt + '. Versuch.' : 'Teilweise geschafft');
+  let msg = '';
+  if (t.type === 'figure') {
+    msg += '<p>Das ist ein <b>' + t.shapeName + '</b>. ' + SHAPES[t.kind].expl + '</p>';
+    if (allFirst) {
+      title = 'Figur entdeckt! ✨';
+      const fl = board.items.find(it => it.tag === 'figline'); if (fl) { fl.cls = 'done'; board.renderItems(); }
+      confetti(); Sound.play('treasure');
+    }
+  } else if (Game.mode === 'training' && s && s.explain) {
+    msg += '<p>' + s.explain() + '</p>';
+  } else if (s && s.kind !== 'choice' && t.steps.length === 1) {
+    msg += '<p>' + coordHTML(s.label && s.label.length <= 2 ? s.label : '', s.target) + '</p>';
+  }
+  if (Game.mode === 'game' && settings.showPoints) {
+    const parts = [];
+    if (base) parts.push(base + ' Punkte');
+    if (bonus) parts.push('Zeitbonus +' + bonus);
+    if (penalty) parts.push('Hilfe ' + MINUS + penalty);
+    if (parts.length) msg += '<p>' + parts.join(' · ') + '</p>';
+  }
+  showArea(null);
+  const auto = Game.mode === 'training' ? 2600 : (t.type === 'figure' && allFirst ? 2200 : 1500);
+  showFeedback('ok', title, msg, nextTask, { auto: auto, pts: Game.mode === 'game' && settings.showPoints ? '+' + pts : '' });
+}
+
+/* ---------- Hilfe ---------- */
+function useHelp() {
+  const s = curStep();
+  if (!Game.active || !s || !s.help || Game.lock || Game.stepHelp || !settings.helpAllowed) return;
+  Game.stepHelp = true; Game.task.help++; Game.helpsUsed++;
+  const h = s.help();
+  (h.items || []).forEach(it => board.add(Object.assign({ tag: 'help' }, it)));
+  Sound.play('help');
+  $('#btn-help').disabled = true;
+  const paid = Game.mode === 'game' && settings.showPoints && settings.helpCost;
+  showFeedback('info', 'Hilfe' + (paid ? ' (' + MINUS + settings.helpCost + ' Punkte)' : ''), h.text + '<span class="tip">' + MERKSATZ + '</span>', null);
+  if (paid) floatPoints(MINUS + settings.helpCost, true);
+}
+
+/* ---------- Rückmeldung ---------- */
+function showFeedback(kind, title, html, action, opts) {
+  opts = opts || {};
+  const fb = $('#feedback');
+  fb.className = 'feedback ' + kind; fb.hidden = false;
+  $('#fb-ico').innerHTML = icon(kind === 'ok' ? 'check' : kind === 'bad' ? 'x' : 'bulb');
+  $('#fb-title').textContent = title;
+  $('#fb-pts').textContent = opts.pts || '';
+  $('#fb-msg').innerHTML = html || '';
+  const btn = $('#fb-next');
+  Game.fbAction = action || null;
+  btn.hidden = !action;
+  if (action) {
+    const last = Game.mode === 'game' && Game.index >= Game.total && action === nextTask;
+    btn.innerHTML = (last ? 'Zur Auswertung' : 'Weiter') + ' ' + icon('arrowR');
+    if (opts.auto) schedule(() => { if (Game.fbAction === action && !Game.modalOpen) runFeedbackAction(); }, opts.auto);
+  }
+  fb.style.animation = 'none'; void fb.offsetHeight; fb.style.animation = '';
+  try { fb.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+}
+function hideFeedback() { $('#feedback').hidden = true; Game.fbAction = null; }
+function runFeedbackAction() {
+  const a = Game.fbAction; if (!a) return;
+  Game.fbAction = null; clearTimers(); a();
+}
+function floatPoints(txt, neg) {
+  const fx = $('#fx'), d = document.createElement('div');
+  d.className = 'float-pts' + (neg ? ' neg' : '');
+  d.textContent = txt;
+  const s = curStep();
+  let x = fx.clientWidth / 2, y = fx.clientHeight / 2;
+  if (board.geo && s && s.target) { const p = board.coordinateToPixel(s.target.x, s.target.y); x = p.x; y = p.y - 30; }
+  d.style.left = clamp(x, 40, fx.clientWidth - 40) + 'px'; d.style.top = clamp(y, 40, fx.clientHeight - 20) + 'px';
+  fx.appendChild(d); setTimeout(() => d.remove(), 1300);
+}
+function confetti() {
+  const fx = $('#fx'); const colors = ['#e8a33d', '#0f5c63', '#1f8a50', '#6a52c9', '#cf3f3f', '#f3c26b'];
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement('div'); c.className = 'confetti';
+    c.style.left = Math.random() * 100 + '%'; c.style.background = pick(colors);
+    c.style.setProperty('--dx', (Math.random() * 160 - 80) + 'px'); c.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+    c.style.animationDuration = (1.2 + Math.random() * 1.2) + 's'; c.style.animationDelay = (Math.random() * 0.3) + 's';
+    fx.appendChild(c); setTimeout(() => c.remove(), 2900);
+  }
+}
+
+/* ---------- Spielende & Auswertung ---------- */
+function endGame() {
+  clearTimers(); stopTaskTimer();
+  Game.active = false;
+  Sound.play('end');
+  showResults();
+}
+function showResults() {
+  const R = Game.results, n = R.length, c = R.filter(r => r.correct).length, wrong = n - c;
+  const rate = n ? Math.round(100 * c / n) : 0;
+  const avg = n ? R.reduce((a, r) => a + r.time, 0) / n : 0;
+  const per = {};
+  R.forEach(r => { per[r.type] = per[r.type] || { n: 0, c: 0 }; per[r.type].n++; if (r.correct) per[r.type].c++; });
+  const types = Object.keys(per);
+  let best = null, worst = null;
+  types.forEach(k => {
+    const v = per[k], q = v.c / v.n;
+    if (v.c > 0 && (!best || q > best.q || (q === best.q && v.n > best.n))) best = { k, q, n: v.n };
+    const w = v.n - v.c;
+    if (w > 0 && (!worst || w > worst.w || (w === worst.w && q < worst.q))) worst = { k, w, q };
+  });
+  const errs = Object.keys(Game.errors).filter(k => Game.errors[k] > 0).sort((a, b) => Game.errors[b] - Game.errors[a]);
+  const head = rate >= 90 ? 'Meisterhafte Expedition!' : rate >= 70 ? 'Starke Leistung!' : rate >= 50 ? 'Gut gemacht – weiter üben!' : 'Jede Expedition beginnt mit dem ersten Schritt!';
+  const isGame = Game.mode === 'game';
+  const tiles = [];
+  if (isGame && settings.showPoints) tiles.push('<div class="tile hl"><b>' + Game.score + '</b><span>Punkte</span></div>');
+  tiles.push('<div class="tile"><b>' + rate + ' %</b><span>Trefferquote</span></div>');
+  tiles.push('<div class="tile"><b style="color:var(--ok)">' + c + '</b><span>Richtige Aufgaben</span></div>');
+  tiles.push('<div class="tile"><b style="color:var(--bad)">' + wrong + '</b><span>Falsche Aufgaben</span></div>');
+  tiles.push('<div class="tile"><b>' + Game.helpsUsed + '</b><span>Verwendete Hilfen</span></div>');
+  tiles.push('<div class="tile"><b>' + fmtDec(avg, 1) + ' s</b><span>Ø Antwortzeit</span></div>');
+  if (Game.treasures) tiles.push('<div class="tile"><b>🎒 ' + Game.treasures + '</b><span>Gefundene Schätze</span></div>');
+  const bars = TYPE_KEYS.filter(k => per[k]).map(k => {
+    const v = per[k], q = Math.round(100 * v.c / v.n);
+    return '<div class="bar-row"><span>' + TYPE_INFO[k].name + '</span><div class="bt"><i style="width:' + q + '%;background:' + (q >= 70 ? 'var(--ok)' : q >= 40 ? 'var(--accent)' : 'var(--bad)') + '"></i></div><span class="bv">' + v.c + '/' + v.n + '</span></div>';
+  }).join('') || '<p class="hint">Keine Aufgaben bearbeitet.</p>';
+  const errHtml = errs.length ? errs.map(k => '<div class="kv"><span>' + (ERR_LABELS[k] || k) + '</span><b>' + Game.errors[k] + '×</b></div>').join('') : '<p class="hint">Keine typischen Fehler – hervorragend!</p>';
+  const log = R.map((r, i) => '<span class="' + (r.correct ? 'y' : 'n') + '">' + (i + 1) + ' ' + (r.correct ? '✓' : '✗') + ' ' + r.summary + '</span>').join('');
+  $('#results-page').innerHTML =
+    '<div class="res-head"><div class="trophy">' + icon('trophy') + '</div><h2>KoordinatenJagd beendet!</h2><p><b>' + c + ' von ' + n + '</b> Aufgaben richtig · ' + head + '</p></div>' +
+    '<div class="tiles">' + tiles.join('') + '</div>' +
+    '<div class="res-cols">' +
+      '<div class="card"><h3 style="margin-bottom:.5rem">Aufgabenbereiche</h3>' + bars + '</div>' +
+      '<div class="card"><h3 style="margin-bottom:.5rem">Auswertung</h3>' +
+        '<div class="kv"><span>Bester Aufgabenbereich</span><b>' + (best ? TYPE_INFO[best.k].name : '–') + '</b></div>' +
+        '<div class="kv"><span>Bereich mit den meisten Fehlern</span><b>' + (worst ? TYPE_INFO[worst.k].name : 'keiner 🎉') + '</b></div>' +
+        '<div class="kv"><span>Koordinatensystem</span><b>' + (Game.system === 'normal' ? 'normal (0 bis ' + Game.R + ')' : 'erweitert (' + MINUS + Game.R + ' bis +' + Game.R + ')') + '</b></div>' +
+        '<h3 style="margin:.9rem 0 .3rem;font-size:1rem">Typische Fehler</h3>' + errHtml +
+      '</div>' +
+    '</div>' +
+    (n ? '<div class="card" style="margin-top:1rem"><h3 style="margin-bottom:.5rem;font-size:1rem">Alle Aufgaben</h3><div class="task-log">' + log + '</div></div>' : '') +
+    '<div class="res-actions">' +
+      '<button class="btn btn-primary btn-xl" data-action="again">' + icon('refresh') + 'Noch einmal</button>' +
+      '<button class="btn btn-accent btn-xl" data-action="harder">' + icon('trend') + 'Schwieriger</button>' +
+      '<button class="btn btn-xl" data-action="menu">' + icon('home') + 'Zurück zum Menü</button>' +
+    '</div>';
+  showScreen('results');
+}
+function makeHarder() {
+  const d = settings.difficulty;
+  let note;
+  if (d === 'easy') { applyPreset('medium'); note = 'Stufe „Mittel“: größerer Zahlenraum, weniger Zahlen, neue Aufgabentypen.'; }
+  else if (d === 'medium') { applyPreset('hard'); note = 'Stufe „Schwer“: erweitertes System, Spiegeln und Verschieben.'; }
+  else {
+    if (settings.system === 'normal') { settings.system = 'extended'; note = 'Jetzt im erweiterten Koordinatensystem!'; }
+    else if (getRange('extended') < 10) { settings.rangeExtSel = '10'; note = 'Zahlenraum −10 bis +10.'; }
+    else if (settings.labels === 'all' || settings.labels === 'every2') { settings.labels = 'selected'; note = 'Nur noch ausgewählte Zahlen sind beschriftet.'; }
+    else if (settings.gridMode === 'full') { settings.gridMode = 'ticks'; note = 'Das Raster ist ausgeblendet – nur Teilstriche.'; }
+    else if (getRange('extended') < 20) { settings.rangeExtSel = '20'; note = 'Zahlenraum −20 bis +20.'; }
+    else { note = 'Das ist bereits die schwierigste Einstellung!'; }
+    settings.difficulty = 'custom';
+    saveSettings();
+  }
+  toast(note);
+  startGame(Game.mode || 'game');
+}
+
+/* =====================================================================
+   8. OBERFLÄCHE: Screens, Setup, Einstellungen, Modal, Toast, Vollbild
+   ===================================================================== */
+let currentScreen = 'menu', settingsReturn = 'menu', setupMode = 'game';
+let prevNormal = null, prevExt = null, settingsPreview = null;
+
+function showScreen(name) {
+  $$('.screen').forEach(s => s.classList.toggle('active', s.id === 'screen-' + name));
+  currentScreen = name;
+  const sc = $('#screen-' + name + ' .scroll'); if (sc) sc.scrollTop = 0;
+  if (name === 'game' && board) requestAnimationFrame(() => board.render());
+  if (name === 'settings' && settingsPreview) requestAnimationFrame(() => settingsPreview.render());
+}
+let toastTimer = null;
+function toast(msg, ms) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), ms || 2400);
+}
+function openModal(title, html, buttons) {
+  const m = $('#modal'), c = $('#modal-card');
+  c.innerHTML = '<h3>' + title + '</h3><div>' + html + '</div><div class="modal-actions"></div>';
+  const row = c.querySelector('.modal-actions');
+  buttons.forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'btn ' + (b.cls || ''); btn.innerHTML = (b.icon ? icon(b.icon) : '') + b.label;
+    btn.addEventListener('click', () => { closeModal(); if (b.action) b.action(); });
+    row.appendChild(btn);
+  });
+  m.hidden = false; Game.modalOpen = true;
+}
+function closeModal() { $('#modal').hidden = true; Game.modalOpen = false; }
+
+/* ---------- Vollbild (Fullscreen API mit WebKit-Fallback) ---------- */
+function isFullscreen() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+function toggleFullscreen() {
+  const d = document.documentElement;
+  try {
+    if (isFullscreen()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); }
+    else if (d.requestFullscreen) { const p = d.requestFullscreen({ navigationUI: 'hide' }); if (p && p.catch) p.catch(() => toast('Vollbild ist hier nicht möglich.')); }
+    else if (d.webkitRequestFullscreen) d.webkitRequestFullscreen();
+    else toast('Vollbild wird von diesem Gerät nicht unterstützt. Tipp: Seite zum Home-Bildschirm hinzufügen.', 3500);
+  } catch (e) { toast('Vollbild ist hier nicht möglich.'); }
+}
+function updateFsButtons() {
+  const fs = isFullscreen();
+  $$('[data-action="fullscreen"] [data-icon]').forEach(s => { s.innerHTML = icon(fs ? 'shrink' : 'expand'); });
+  $$('.fs-label').forEach(s => { s.textContent = fs ? 'Vollbild beenden' : 'Vollbild'; });
+}
+function updateSoundButtons() {
+  $$('[data-action="sound"] [data-icon]').forEach(s => { s.innerHTML = icon(settings.sound ? 'sound' : 'mute'); });
+}
+
+/* ---------- Setup vor jedem Spiel ---------- */
+function openSetup(mode) {
+  setupMode = mode;
+  $('#setup-title').textContent = mode === 'game' ? 'Neue Expedition' : 'Training';
+  $('#btn-go-label').textContent = mode === 'game' ? 'Los geht\'s!' : 'Training starten';
+  $('#setup-count-wrap').hidden = mode !== 'game';
+  showScreen('setup');
+  renderSetup();
+}
+function rangeOptions(sys) {
+  return sys === 'normal'
+    ? [['5', '0 bis 5'], ['10', '0 bis 10'], ['20', '0 bis 20'], ['custom', 'frei']]
+    : [['5', MINUS + '5 bis +5'], ['10', MINUS + '10 bis +10'], ['20', MINUS + '20 bis +20'], ['custom', 'frei']];
+}
+function segHTML(opts, cur, extra) {
+  return opts.map(([v, l]) => '<button type="button" data-val="' + v + '" class="' + (String(cur) === String(v) ? 'on' : '') + '">' + l + '</button>').join('') + (extra || '');
+}
+function renderSetup() {
+  $$('#screen-setup .sys-card').forEach(c => c.classList.toggle('on', c.dataset.sys === settings.system));
+  const sys = settings.system;
+  const sel = sys === 'normal' ? settings.rangeNormalSel : settings.rangeExtSel;
+  const cv = sys === 'normal' ? settings.rangeNormalCustom : settings.rangeExtCustom;
+  const custom = sel === 'custom' ? '<span class="custom-in">' + (sys === 'normal' ? '0 bis' : '±') + ' <input class="num-in" id="setup-range-custom" type="number" inputmode="numeric" min="3" max="' + (sys === 'normal' ? 30 : 25) + '" value="' + cv + '"></span>' : '';
+  $('#setup-range').innerHTML = segHTML(rangeOptions(sys), sel, custom);
+  $('#setup-diff').innerHTML = ['easy', 'medium', 'hard'].map(k => '<button type="button" class="preset ' + (settings.difficulty === k ? 'on' : '') + '" data-preset="' + k + '"><b>' + PRESETS[k].label + '</b><small>' + PRESETS[k].desc + '</small></button>').join('');
+  $('#setup-diff-note').textContent = settings.difficulty === 'custom' ? 'Aktuell: benutzerdefinierte Einstellungen (Lehrer-Einstellungen).' : 'Die Stufe setzt Voreinstellungen – alles bleibt einzeln veränderbar.';
+  const tsel = settings.taskCountSel;
+  $('#setup-count').innerHTML = segHTML([['5', '5'], ['10', '10'], ['15', '15'], ['20', '20'], ['custom', 'frei']], tsel,
+    tsel === 'custom' ? '<span class="custom-in"><input class="num-in" id="setup-count-custom" type="number" inputmode="numeric" min="1" max="100" value="' + settings.taskCountCustom + '"> Aufgaben</span>' : '');
+  const en = enabledTypes();
+  $('#setup-types').innerHTML = TYPE_KEYS.map(k => '<span class="chip ' + (en.includes(k) ? '' : 'off') + '">' + icon(TYPE_INFO[k].icon) + TYPE_INFO[k].name + '</span>').join('');
+  bindNumInput('#setup-range-custom', v => { if (sys === 'normal') settings.rangeNormalCustom = clamp(v, 3, 30); else settings.rangeExtCustom = clamp(v, 3, 25); });
+  bindNumInput('#setup-count-custom', v => { settings.taskCountCustom = clamp(v, 1, 100); });
+}
+function bindNumInput(sel, fn) {
+  const i = $(sel); if (!i) return;
+  const commit = () => { const v = parseInt(i.value, 10); if (!isNaN(v)) { fn(v); saveSettings(); } validateSettings(); };
+  i.addEventListener('change', () => { commit(); i.value = i.value && !isNaN(parseInt(i.value, 10)) ? clamp(parseInt(i.value, 10), +i.min, +i.max) : i.value; });
+  i.addEventListener('input', commit);
+}
+function renderSetupPreviews() {
+  prevNormal = new CoordSystem($('#prev-normal'), { size: [190, 190], minFont: 9, maxFont: 9 });
+  prevNormal.cfg = Object.assign(prevNormal.cfg, { xmin: 0, xmax: 6, ymin: 0, ymax: 6, labels: 'all' });
+  prevNormal.items = [{ kind: 'point', x: 4, y: 3, label: 'A', cls: 'ok' }];
+  prevNormal.render();
+  prevExt = new CoordSystem($('#prev-extended'), { size: [190, 190], minFont: 9, maxFont: 9 });
+  prevExt.cfg = Object.assign(prevExt.cfg, { xmin: -5, xmax: 5, ymin: -5, ymax: 5, labels: 'every2' });
+  prevExt.items = [
+    { kind: 'region', x1: 0, y1: 0, x2: 5, y2: 5, cls: 'q1' }, { kind: 'region', x1: -5, y1: 0, x2: 0, y2: 5, cls: 'q2' },
+    { kind: 'region', x1: -5, y1: -5, x2: 0, y2: 0, cls: 'q3' }, { kind: 'region', x1: 0, y1: -5, x2: 5, y2: 0, cls: 'q4' },
+    { kind: 'point', x: 3, y: 4 }, { kind: 'point', x: -3, y: 4, cls: 'orig' }, { kind: 'point', x: -3, y: -4, cls: 'ok' }, { kind: 'point', x: 3, y: -4, cls: 'bad' }
+  ];
+  prevExt.render();
+}
+
+/* ---------- Lehrer-Einstellungen ---------- */
+const SETTINGS_SCHEMA = [
+  { title: 'Schwierigkeitsstufe', desc: 'Presets setzen sinnvolle Voreinstellungen. Danach bleibt jede Einstellung einzeln veränderbar.', wide: true, rows: [{ type: 'preset' }] },
+  { title: 'Koordinatensystem', rows: [
+    { key: 'system', type: 'seg', label: 'Art', options: [['normal', 'Normal (nur positiv)'], ['extended', 'Erweitert (4 Quadranten)']] }
+  ] },
+  { title: 'Zahlenbereich', rows: [
+    { key: 'rangeNormalSel', type: 'seg', label: 'Normales System', options: () => rangeOptions('normal'), custom: { key: 'rangeNormalCustom', min: 3, max: 30, pre: '0 bis' } },
+    { key: 'rangeExtSel', type: 'seg', label: 'Erweitertes System', options: () => rangeOptions('extended'), custom: { key: 'rangeExtCustom', min: 3, max: 25, pre: '±' } }
+  ] },
+  { title: 'Aufgabentypen', desc: 'Mehrere Typen können gleichzeitig aktiv sein; sie werden gemischt.', wide: true, rows: [{ type: 'types' }] },
+  { title: 'Darstellung', preview: true, rows: [
+    { key: 'gridMode', type: 'seg', label: 'Raster', options: [['full', 'Raster vollständig sichtbar'], ['ticks', 'Nur Teilstriche'], ['none', 'Raster ausblenden']] },
+    { key: 'ticks', type: 'toggle', label: 'Teilstriche anzeigen', hint: 'gilt, wenn das Raster ausgeblendet ist' },
+    { key: 'labels', type: 'seg', label: 'Zahlen beschriften', options: [['all', 'Alle Zahlen anzeigen'], ['every2', 'Nur jede zweite Zahl'], ['selected', 'Nur ausgewählte Werte'], ['none', 'Keine Zahlen']] },
+    { key: 'axisLabels', type: 'toggle', label: 'Achsen beschriften (x, y)' },
+    { key: 'helpAllowed', type: 'toggle', label: 'Hilfe & Hilfslinien erlauben' },
+    { key: 'helpCost', type: 'seg', num: true, label: 'Hilfe kostet (Punkte)', options: [[0, '0'], [10, '10'], [20, '20'], [30, '30']] }
+  ] },
+  { title: 'Spiel', rows: [
+    { key: 'taskCountSel', type: 'seg', label: 'Anzahl Aufgaben', options: [['5', '5'], ['10', '10'], ['15', '15'], ['20', '20'], ['custom', 'frei']], custom: { key: 'taskCountCustom', min: 1, max: 100, pre: '' } },
+    { key: 'timeLimit', type: 'seg', num: true, label: 'Zeitlimit pro Aufgabe', options: [[0, 'aus'], [15, '15 s'], [30, '30 s'], [60, '60 s']] },
+    { key: 'timeBonus', type: 'toggle', label: 'Zeitbonus', hint: 'sehr schnell +50 · schnell +30 · normal +10' },
+    { key: 'attempts', type: 'seg', num: true, label: 'Fehler erlauben (Versuche pro Aufgabe)', options: [[1, '1 Versuch'], [2, '2 Versuche'], [3, '3 Versuche']] },
+    { key: 'showPoints', type: 'toggle', label: 'Punkte anzeigen' },
+    { key: 'showSolution', type: 'toggle', label: 'Lösung nach Fehler anzeigen' },
+    { key: 'moveVector', type: 'toggle', label: 'Verschiebung auch als Vektor', hint: 'im erweiterten System bzw. auf „Schwer“' },
+    { key: 'sound', type: 'toggle', label: 'Sound' }
+  ] }
+];
+function buildSettings() {
+  const page = $('#settings-page');
+  let html = '<div class="set-grid">';
+  SETTINGS_SCHEMA.forEach((sec, si) => {
+    html += '<div class="set-sec ' + (sec.wide ? 'wide' : '') + '"><h3>' + sec.title + (si === 0 ? '<span class="diff-badge" id="diff-badge"></span>' : '') + '</h3>' + (sec.desc ? '<p class="desc">' + sec.desc + '</p>' : '');
+    if (sec.preview) html += '<div class="preview-box"><svg id="settings-preview"></svg></div>';
+    sec.rows.forEach(r => {
+      if (r.type === 'preset') html += '<div class="preset-row" id="set-presets"></div>';
+      else if (r.type === 'types') html += '<div class="type-grid" id="set-types"></div>';
+      else if (r.type === 'seg') html += '<div class="set-row"><label class="lbl">' + r.label + '</label><div class="seg" data-key="' + r.key + '"></div></div>';
+      else if (r.type === 'toggle') html += '<div class="set-row"><label class="tog"><span class="t-l">' + r.label + (r.hint ? '<small>' + r.hint + '</small>' : '') + '</span><span class="switch"><input type="checkbox" data-key="' + r.key + '"><span></span></span></label></div>';
+    });
+    html += '</div>';
+  });
+  html += '</div><div class="card" style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between">' +
+    '<p class="hint" style="margin:0;max-width:40rem">' + icon('lock') + ' Alle Einstellungen werden nur lokal in diesem Browser gespeichert. Es werden keine personenbezogenen Daten erfasst oder übertragen.</p>' +
+    '<button class="btn btn-ghost" id="btn-reset-settings">' + icon('refresh') + 'Auf Standard zurücksetzen</button></div>';
+  page.innerHTML = html;
+  settingsPreview = new CoordSystem($('#settings-preview'), { minFont: 10, maxFont: 14 });
+  page.addEventListener('click', onSettingsClick);
+  page.addEventListener('change', onSettingsChange);
+  $('#btn-reset-settings').addEventListener('click', () => {
+    openModal('Zurücksetzen?', '<p>Alle Lehrer-Einstellungen werden auf die Standardwerte zurückgesetzt.</p>', [
+      { label: 'Abbrechen', cls: 'btn-ghost' },
+      { label: 'Zurücksetzen', cls: 'btn-primary', action: () => { const keep = settings.tutorialOffered; settings = JSON.parse(JSON.stringify(DEFAULTS)); settings.tutorialOffered = keep; saveSettings(); refreshSettings(); toast('Einstellungen zurückgesetzt.'); } }
+    ]);
+  });
+}
+function findRow(key) { for (const s of SETTINGS_SCHEMA) for (const r of s.rows) if (r.key === key) return r; return null; }
+function refreshSettings() {
+  $('#diff-badge').textContent = settings.difficulty === 'custom' ? 'Benutzerdefiniert' : 'Aktiv: ' + PRESETS[settings.difficulty].label;
+  $('#set-presets').innerHTML = ['easy', 'medium', 'hard'].map(k => '<button type="button" class="preset ' + (settings.difficulty === k ? 'on' : '') + '" data-preset="' + k + '"><b>' + PRESETS[k].label + '</b><small>' + PRESETS[k].desc + '</small></button>').join('');
+  $('#set-types').innerHTML = TYPE_KEYS.map(k => '<button type="button" class="type-tog ' + (settings.types[k] ? 'on' : '') + '" data-type="' + k + '"><span class="box">' + icon('check') + '</span><span><b>' + TYPE_INFO[k].name + '</b><small>' + TYPE_INFO[k].desc + '</small></span></button>').join('');
+  $$('#settings-page .seg[data-key]').forEach(seg => {
+    const r = findRow(seg.dataset.key);
+    const opts = typeof r.options === 'function' ? r.options() : r.options;
+    const cur = settings[r.key];
+    let extra = '';
+    if (r.custom && String(cur) === 'custom') extra = '<span class="custom-in">' + r.custom.pre + ' <input class="num-in" type="number" inputmode="numeric" data-custom="' + r.custom.key + '" min="' + r.custom.min + '" max="' + r.custom.max + '" value="' + settings[r.custom.key] + '"></span>';
+    seg.innerHTML = segHTML(opts, cur, extra);
+  });
+  $$('#settings-page input[type=checkbox][data-key]').forEach(i => { i.checked = !!settings[i.dataset.key]; });
+  updateSettingsPreview();
+  updateSoundButtons();
+}
+function updateSettingsPreview() {
+  if (!settingsPreview) return;
+  const b = getBounds(settings.system);
+  settingsPreview.cfg = Object.assign(settingsPreview.cfg, b, { gridMode: settings.gridMode, ticks: settings.ticks, labels: settings.labels, axisLabels: settings.axisLabels });
+  const ext = settings.system === 'extended', R = getRange();
+  const p = ext ? P(-Math.ceil(R * 0.4), Math.ceil(R * 0.6)) : P(Math.ceil(R * 0.6), Math.ceil(R * 0.4));
+  settingsPreview.items = [{ kind: 'point', x: p.x, y: p.y, label: 'A', showCoords: true }];
+  settingsPreview.render();
+}
+function onSettingsClick(e) {
+  const pr = e.target.closest('[data-preset]');
+  if (pr) { applyPreset(pr.dataset.preset); refreshSettings(); toast('Stufe „' + PRESETS[pr.dataset.preset].label + '“ übernommen.'); return; }
+  const ty = e.target.closest('[data-type]');
+  if (ty) {
+    const k = ty.dataset.type;
+    settings.types[k] = !settings.types[k];
+    if (!TYPE_KEYS.some(t => settings.types[t])) { settings.types[k] = true; toast('Mindestens ein Aufgabentyp muss aktiv sein.'); return; }
+    settings.difficulty = 'custom'; saveSettings(); refreshSettings(); return;
+  }
+  const b = e.target.closest('.seg[data-key] button[data-val]');
+  if (b) {
+    const seg = b.closest('.seg'), r = findRow(seg.dataset.key);
+    settings[r.key] = r.num ? Number(b.dataset.val) : b.dataset.val;
+    if (r.key !== 'helpCost') settings.difficulty = 'custom';
+    saveSettings(); refreshSettings();
+  }
+}
+function onSettingsChange(e) {
+  const i = e.target;
+  if (i.matches('input[type=checkbox][data-key]')) {
+    settings[i.dataset.key] = i.checked;
+    if (!['sound', 'showPoints', 'showSolution'].includes(i.dataset.key)) settings.difficulty = 'custom';
+    saveSettings(); refreshSettings();
+  } else if (i.matches('input[data-custom]')) {
+    const v = parseInt(i.value, 10);
+    if (!isNaN(v)) { settings[i.dataset.custom] = clamp(v, +i.min, +i.max); i.value = settings[i.dataset.custom]; settings.difficulty = 'custom'; saveSettings(); updateSettingsPreview(); }
+  }
+}
+function openSettings(from) {
+  settingsReturn = from || 'menu';
+  showScreen('settings');
+  refreshSettings();
+}
+
+/* ---------- Anleitung ---------- */
+function buildGuide() {
+  $('#guide-modes').innerHTML = TYPE_KEYS.map(k => '<div class="mode-item"><span class="ico">' + icon(TYPE_INFO[k].icon) + '</span><div><b>' + TYPE_INFO[k].name + '</b><span>' + TYPE_INFO[k].desc + '</span></div></div>').join('');
+}
+
+/* =====================================================================
+   9. TUTORIAL (kurze animierte Einführung)
+   ===================================================================== */
+const Tutorial = {
+  cs: null, steps: [], i: 0, raf: null, sys: 'normal',
+  animate(dur, fn, done) {
+    const t0 = now();
+    const step = () => {
+      const k = clamp((now() - t0) / dur, 0, 1);
+      fn(k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
+      if (k < 1) this.raf = requestAnimationFrame(step); else { this.raf = null; if (done) done(); }
+    };
+    this.raf = requestAnimationFrame(step);
+  },
+  stop() { if (this.raf) cancelAnimationFrame(this.raf); this.raf = null; },
+  walk(path, done) {   // path: [[x,y],...] – läuft Segment für Segment mit Spur
+    const cs = this.cs;
+    const walker = { kind: 'point', x: path[0][0], y: path[0][1], cls: 'walker', anim: false };
+    cs.items.push(walker);
+    const seg = (i) => {
+      if (i >= path.length - 1) { if (done) done(); return; }
+      const [ax, ay] = path[i], [bx, by] = path[i + 1];
+      const trail = { kind: 'segment', x1: ax, y1: ay, x2: ax, y2: ay, cls: 'trail', anim: false };
+      cs.items.push(trail);
+      const len = Math.abs(bx - ax) + Math.abs(by - ay);
+      this.animate(500 + len * 260, k => {
+        walker.x = ax + (bx - ax) * k; walker.y = ay + (by - ay) * k;
+        trail.x2 = walker.x; trail.y2 = walker.y;
+        cs.renderItems();
+      }, () => setTimeout(() => { if (this.cs.items.includes(walker)) seg(i + 1); }, 250));
+    };
+    seg(0);
+  },
+  build(sys) {
+    const T = [];
+    T.push({ t: 'Das Koordinatensystem', m: 'Die <b>x-Achse</b> zeigt nach rechts, die <b>y-Achse</b> nach oben. Jeder Gitterpunkt hat eine Adresse: seine Koordinaten.',
+      set: cs => { const b = cs.cfg; cs.items = [{ kind: 'segment', x1: b.xmin, y1: 0, x2: b.xmax, y2: 0, cls: 'hl' }, { kind: 'segment', x1: 0, y1: b.ymin, x2: 0, y2: b.ymax, cls: 'hl' }]; } });
+    T.push({ t: 'Starte im Ursprung', m: 'Der Ursprung <b>O(0|0)</b> ist dein Startpunkt. Hier kreuzen sich die beiden Achsen.',
+      set: cs => { cs.items = [{ kind: 'point', x: 0, y: 0, label: 'O', ring: true, cls: 'walker' }]; } });
+    T.push({ t: '1. Zuerst die x-Achse', m: 'Für <b>A(4|3)</b> gehst du zuerst auf der x-Achse <b>4 nach rechts</b>.',
+      set: cs => { cs.items = []; this.walk([[0, 0], [4, 0]]); } });
+    T.push({ t: '2. Danach die y-Achse', m: 'Dann gehst du <b>3 nach oben</b>.',
+      set: cs => { cs.items = [{ kind: 'segment', x1: 0, y1: 0, x2: 4, y2: 0, cls: 'trail' }]; this.walk([[4, 0], [4, 3]]); } });
+    T.push({ t: 'Geschafft: A(4|3)', m: 'Erst x, dann y! Die erste Zahl sagt „rechts/links“, die zweite „oben/unten“. Man schreibt <b>A(4|3)</b>.',
+      set: cs => { cs.items = [{ kind: 'helpers', x: 4, y: 3, values: true }, { kind: 'point', x: 4, y: 3, label: 'A', showCoords: true, cls: 'ok' }]; } });
+    if (sys === 'extended') {
+      T.push({ t: 'Rechts und links', m: '<b>Negative x-Werte</b> liegen <b>links</b> vom Ursprung, <b>positive x-Werte rechts</b>.',
+        set: cs => { const b = cs.cfg; cs.items = [{ kind: 'region', x1: b.xmin, y1: b.ymin, x2: 0, y2: b.ymax, cls: 'neg' }, { kind: 'region', x1: 0, y1: b.ymin, x2: b.xmax, y2: b.ymax, cls: 'pos' },
+          { kind: 'text', x: b.xmin / 2, y: b.ymax * 0.75, text: 'x negativ', cls: 'big' }, { kind: 'text', x: b.xmax / 2, y: b.ymax * 0.75, text: 'x positiv', cls: 'big' }]; } });
+      T.push({ t: 'Oben und unten', m: '<b>Positive y-Werte</b> liegen <b>oben</b>, <b>negative y-Werte unten</b>.',
+        set: cs => { const b = cs.cfg; cs.items = [{ kind: 'region', x1: b.xmin, y1: 0, x2: b.xmax, y2: b.ymax, cls: 'pos' }, { kind: 'region', x1: b.xmin, y1: b.ymin, x2: b.xmax, y2: 0, cls: 'neg' },
+          { kind: 'text', x: b.xmax * 0.5, y: b.ymax / 2, text: 'y positiv', cls: 'big' }, { kind: 'text', x: b.xmax * 0.5, y: b.ymin / 2, text: 'y negativ', cls: 'big' }]; } });
+      T.push({ t: 'Beispiel B(−3|−2)', m: 'Zuerst <b>3 nach links</b> (x = −3), danach <b>2 nach unten</b> (y = −2).',
+        set: cs => { cs.items = []; this.walk([[0, 0], [-3, 0], [-3, -2]], () => { cs.items.push({ kind: 'point', x: -3, y: -2, label: 'B', showCoords: true, cls: 'ok' }); cs.renderItems(); }); } });
+      T.push({ t: 'Die vier Quadranten', m: 'I (+|+) rechts oben · II (−|+) links oben · III (−|−) links unten · IV (+|−) rechts unten.',
+        set: cs => { const b = cs.cfg, h = b.xmax / 2; cs.items = [
+          { kind: 'region', x1: 0, y1: 0, x2: b.xmax, y2: b.ymax, cls: 'q1' }, { kind: 'region', x1: b.xmin, y1: 0, x2: 0, y2: b.ymax, cls: 'q2' },
+          { kind: 'region', x1: b.xmin, y1: b.ymin, x2: 0, y2: 0, cls: 'q3' }, { kind: 'region', x1: 0, y1: b.ymin, x2: b.xmax, y2: 0, cls: 'q4' },
+          { kind: 'text', x: h, y: h, text: 'I  (+|+)', cls: 'big' }, { kind: 'text', x: -h, y: h, text: 'II  (−|+)', cls: 'big' },
+          { kind: 'text', x: -h, y: -h, text: 'III  (−|−)', cls: 'big' }, { kind: 'text', x: h, y: -h, text: 'IV  (+|−)', cls: 'big' }]; } });
+    }
+    T.push({ t: 'Bereit für die Jagd?', m: 'Merke dir: <b>' + MERKSATZ + '</b>',
+      set: cs => { cs.items = [{ kind: 'point', x: 2, y: 4, label: 'A', showCoords: true, cls: 'ok' }].concat(sys === 'extended' ? [{ kind: 'point', x: -4, y: 1, label: 'B', showCoords: true }, { kind: 'point', x: -2, y: -3, label: 'C', showCoords: true, cls: 'orig' }, { kind: 'point', x: 3, y: -2, label: 'D', showCoords: true, cls: 'bad' }] : [{ kind: 'point', x: 5, y: 1, label: 'B', showCoords: true }]); } });
+    return T;
+  },
+  open(sys) {
+    this.sys = sys;
+    $('#tutorial').hidden = false; Game.modalOpen = true;
+    if (!this.cs) this.cs = new CoordSystem($('#tut-svg'), { minFont: 13, maxFont: 18 });
+    const b = sys === 'extended' ? { xmin: -5, xmax: 5, ymin: -5, ymax: 5 } : { xmin: 0, xmax: 6, ymin: 0, ymax: 6 };
+    this.cs.cfg = Object.assign(this.cs.cfg, b, { gridMode: 'full', ticks: true, labels: 'all', axisLabels: true });
+    this.steps = this.build(sys);
+    requestAnimationFrame(() => { this.cs.render(); this.go(0); });
+  },
+  go(i) {
+    this.stop();
+    this.i = clamp(i, 0, this.steps.length - 1);
+    const st = this.steps[this.i];
+    this.cs.items = [];
+    st.set(this.cs);
+    this.cs.items.forEach(it => { if (it.anim === undefined) it.anim = true; });
+    this.cs.renderItems();
+    $('#tut-count').textContent = (this.sys === 'extended' ? 'Erweitertes System' : 'Normales System') + ' · Schritt ' + (this.i + 1) + ' von ' + this.steps.length;
+    $('#tut-title').textContent = st.t;
+    $('#tut-msg').innerHTML = st.m;
+    $('#tut-dots').innerHTML = this.steps.map((_, k) => '<i class="' + (k === this.i ? 'on' : '') + '"></i>').join('');
+    $('#tut-prev').disabled = this.i === 0;
+    $('#tut-next').innerHTML = this.i === this.steps.length - 1 ? 'Los geht\'s! ' + icon('check') : 'Weiter ' + icon('arrowR');
+  },
+  next() { if (this.i >= this.steps.length - 1) this.close(); else this.go(this.i + 1); },
+  close() { this.stop(); if (this.cs) this.cs.items = []; $('#tutorial').hidden = true; Game.modalOpen = false; }
+};
+
+/* =====================================================================
+   10. START & EVENTS
+   ===================================================================== */
+function handleAction(a, el) {
+  Sound.ensure && settings.sound && Sound.ensure();
+  switch (a) {
+    case 'start-game': openSetup('game'); break;
+    case 'start-training': openSetup('training'); break;
+    case 'settings': openSettings('menu'); break;
+    case 'settings-from-setup': openSettings('setup'); break;
+    case 'settings-back': if (settingsReturn === 'setup') { showScreen('setup'); renderSetup(); } else showScreen('menu'); break;
+    case 'guide': showScreen('guide'); break;
+    case 'menu': Game.active = false; clearTimers(); stopTaskTimer(); showScreen('menu'); break;
+    case 'fullscreen': toggleFullscreen(); break;
+    case 'sound': settings.sound = !settings.sound; saveSettings(); updateSoundButtons(); toast(settings.sound ? 'Sound an' : 'Sound aus'); if (settings.sound) Sound.play('click'); break;
+    case 'tutorial-normal': Tutorial.open('normal'); break;
+    case 'tutorial-extended': Tutorial.open('extended'); break;
+    case 'again': startGame(Game.mode || 'game'); break;
+    case 'harder': makeHarder(); break;
+    case 'quit': quitGame(); break;
+  }
+}
+function quitGame() {
+  const btns = [{ label: 'Weiterspielen', cls: 'btn-primary', icon: 'play' }];
+  if (Game.results && Game.results.length) btns.push({ label: 'Auswertung', cls: 'btn-accent', icon: 'trophy', action: () => endGame() });
+  btns.push({ label: 'Zum Menü', cls: 'btn-ghost', icon: 'home', action: () => { Game.active = false; clearTimers(); stopTaskTimer(); showScreen('menu'); } });
+  openModal(Game.mode === 'training' ? 'Training beenden?' : 'Expedition abbrechen?', '<p>Dein bisheriger Fortschritt: ' + (Game.results ? Game.results.filter(r => r.correct).length : 0) + ' von ' + (Game.results ? Game.results.length : 0) + ' Aufgaben richtig.</p>', btns);
+}
+
+function bindEvents() {
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-action]');
+    if (b) { handleAction(b.dataset.action, b); }
+  });
+  // Setup
+  $('#screen-setup').addEventListener('click', e => {
+    const sc = e.target.closest('.sys-card');
+    if (sc) { settings.system = sc.dataset.sys; saveSettings(); renderSetup(); return; }
+    const rb = e.target.closest('#setup-range button[data-val]');
+    if (rb) { if (settings.system === 'normal') settings.rangeNormalSel = rb.dataset.val; else settings.rangeExtSel = rb.dataset.val; saveSettings(); renderSetup(); return; }
+    const pb = e.target.closest('#setup-diff [data-preset]');
+    if (pb) { applyPreset(pb.dataset.preset); renderSetup(); toast('Stufe „' + PRESETS[pb.dataset.preset].label + '“ übernommen.'); return; }
+    const cb = e.target.closest('#setup-count button[data-val]');
+    if (cb) { settings.taskCountSel = cb.dataset.val; saveSettings(); renderSetup(); }
+  });
+  $('#btn-go').addEventListener('click', () => { validateSettings(); saveSettings(); Sound.ensure(); startGame(setupMode); });
+  // Spiel
+  $('#keypad').addEventListener('click', e => { const k = e.target.closest('[data-k]'); if (k && !k.disabled) keyInput(k.dataset.k); });
+  ['x', 'y'].forEach(f => $('#ce-' + f).addEventListener('click', () => { if (!Game.lock) { Inp.active = f; renderInput(); } }));
+  $('#fb-next').addEventListener('click', runFeedbackAction);
+  $('#btn-help').addEventListener('click', useHelp);
+  $('#btn-end-training').addEventListener('click', () => { if (Game.results.length) endGame(); else { Game.active = false; clearTimers(); stopTaskTimer(); showScreen('menu'); } });
+  // Tutorial
+  $('#tut-next').addEventListener('click', () => Tutorial.next());
+  $('#tut-prev').addEventListener('click', () => Tutorial.go(Tutorial.i - 1));
+  $('#tut-close').addEventListener('click', () => Tutorial.close());
+  // Tastatur
+  document.addEventListener('keydown', e => {
+    if (e.target && e.target.matches && e.target.matches('input')) return;
+    if (!$('#tutorial').hidden) { if (e.key === 'Escape') Tutorial.close(); else if (e.key === 'ArrowRight' || e.key === 'Enter') Tutorial.next(); else if (e.key === 'ArrowLeft') Tutorial.go(Tutorial.i - 1); return; }
+    if (!$('#modal').hidden) { if (e.key === 'Escape') closeModal(); return; }
+    if (currentScreen !== 'game' || !Game.active) return;
+    const s = curStep();
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (Game.fbAction) { runFeedbackAction(); return; }
+      if (s && s.kind === 'input') keyInput('ok');
+      return;
+    }
+    if (!s) return;
+    if (s.kind === 'input') {
+      if (/^\d$/.test(e.key)) keyInput(e.key);
+      else if (e.key === '-' || e.key === 'Subtract') keyInput('sign');
+      else if (e.key === 'Backspace') { e.preventDefault(); keyInput('back'); }
+      else if (e.key === 'Tab' || e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === '|') { e.preventDefault(); keyInput('switch'); }
+    } else if (s.kind === 'choice' && /^[1-4]$/.test(e.key)) {
+      const b = $$('#choices button')[+e.key - 1]; if (b) b.click();
+    }
+    if (e.key === 'h' || e.key === 'H') useHelp();
+  });
+  // Touch-Schutz: Kontextmenü, Doppeltipp-Zoom, Pinch, Pull-to-refresh
+  document.addEventListener('contextmenu', e => { if (!e.target.closest('input')) e.preventDefault(); });
+  document.addEventListener('gesturestart', e => e.preventDefault());
+  document.addEventListener('dblclick', e => e.preventDefault());
+  document.addEventListener('touchmove', e => {
+    if (e.touches && e.touches.length > 1) { e.preventDefault(); return; }
+    if (!e.target.closest('.scroll, .panel, .modal-card')) e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('selectstart', e => { if (!e.target.closest || !e.target.closest('input')) e.preventDefault(); });
+  document.addEventListener('fullscreenchange', updateFsButtons);
+  document.addEventListener('webkitfullscreenchange', updateFsButtons);
+  // Audio auf iOS beim ersten Tippen freischalten
+  const unlock = () => { if (settings.sound) Sound.ensure(); document.removeEventListener('pointerdown', unlock); };
+  document.addEventListener('pointerdown', unlock);
+  // Modal-Hintergrund schließt
+  $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+}
+
+function initApp() {
+  loadSettings();
+  hydrateIcons(document);
+  board = new CoordSystem($('#board'), { interactive: true, minFont: 11, maxFont: 24 });
+  board.onTap = handleGridClick;
+  buildSettings();
+  buildGuide();
+  renderSetupPreviews();
+  bindEvents();
+  updateSoundButtons();
+  updateFsButtons();
+  if (!document.fullscreenEnabled && !document.webkitFullscreenEnabled) {
+    // z. B. iPhone: Vollbild-Buttons trotzdem anzeigen, aber mit Hinweis (siehe toggleFullscreen)
+  }
+  if (!settings.tutorialOffered) {
+    setTimeout(() => {
+      settings.tutorialOffered = true; saveSettings();
+      openModal('Willkommen bei KoordinatenJagd!', '<p>Möchtest du eine kurze Einführung sehen, wie man sich im Koordinatensystem orientiert? Sie dauert weniger als eine Minute. Du findest sie später auch unter „Anleitung“.</p>', [
+        { label: 'Überspringen', cls: 'btn-ghost' },
+        { label: 'Einführung: erweitertes System', cls: 'btn-accent', icon: 'play', action: () => Tutorial.open('extended') },
+        { label: 'Einführung: normales System', cls: 'btn-primary', icon: 'play', action: () => Tutorial.open('normal') }
+      ]);
+    }, 350);
+  }
+  // Testschnittstelle (nur lesend genutzt; keine Daten nach außen)
+  window.KoordinatenJagd = { KJMath, analyzeAnswer, CoordSystem, Game, get settings() { return settings; }, get board() { return board; },
+    generators: GENERATORS, buildShape, startGame, checkAnswer, curStep, nextTask, getBounds, getRange, applyPreset, loadSettings, saveSettings, keyInput, runFeedbackAction };
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initApp); else initApp();
+})();
+</script>
+</body>
+</html>
